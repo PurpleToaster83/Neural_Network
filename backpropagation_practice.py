@@ -330,8 +330,8 @@ class Network():
     def cumulative_partial(self, weight, layer): #start with just one so easier to debug
         weight_path = self.neuron_pathing(weight)
 
-        if not isinstance(layer, Layer):
-            return [weight_path[0].getOut()]
+        # if not isinstance(layer, Layer):
+        #     return [weight_path[0].getOut()]
 
         current = []
         #TODO: actually make work (follow the path!!!!!)
@@ -347,6 +347,7 @@ class Network():
         return elemts_of_active
 
         #TODO: figure out how to multiply/add partials
+        # recursion is key?
 
 def main():
     learning_rate = 0.5
@@ -355,8 +356,6 @@ def main():
     propagation_weights = [0.15, 0.20, 0.25, 0.30, 0.40, 0.45, 0.50, 0.55]
     propagation_biases = [0.35, 0.35, 0.60, 0.60]
     weight_seek = 5
-
-    #TODO: turned off suggestions for practicing for AP test
 
     # create a network and instatiate the weights, biases, and nuerons
     network = Network(sys_input, target_output, learning_rate)
@@ -369,8 +368,6 @@ def main():
     network.calc_all_partials()
     print(network.cumulative_partial(0, network.layers[-1]))
     network.printInfo()
-
-    #need a way to save the model once parameters have been optimized
 
     # run the test propogate on 2 x 2 network
     # propogation(
