@@ -65,7 +65,7 @@ def propogation(learning_rate, sys_input, desired_output, weights, biases):
         dErrorTotal_dB3 = dErrorO1_dOutO1 * dOutO1_dNetO1
         dErrorTotal_dB4 = dErrorO2_dOutO2 * dOutO2_dNetO2
 
-        #wieghts recalculations
+        #weights recalculations
         dErrorTotal_dW1 = ((dErrorO1_dOutO1 * dOutO1_dNetO1 * dNetO1_dOutH1) + (dErrorO2_dOutO2 * dOutO2_dNetO2 * dNetO2_dOutH1)) * dOutH1_dNetH1 * dNetH_dW1_3
         dErrorTotal_dW2 = ((dErrorO1_dOutO1 * dOutO1_dNetO1 * dNetO1_dOutH1) + (dErrorO2_dOutO2 * dOutO2_dNetO2 * dNetO2_dOutH1)) * dOutH1_dNetH1 * dNetH_dW2_4
         dErrorTotal_dW3 = ((dErrorO1_dOutO1 * dOutO1_dNetO1 * dNetO1_dOutH2) + (dErrorO2_dOutO2 * dOutO2_dNetO2 * dNetO2_dOutH2)) * dOutH2_dNetH2 * dNetH_dW1_3
@@ -99,10 +99,10 @@ def propogation(learning_rate, sys_input, desired_output, weights, biases):
     print(f'New Biases: {biases}')
 
 class Neuron():
-    def __init__(self, inputs, bias, incoming_weights, affects):
+    def __init__(self, inputs, bias, incoming_unweighted, affects):
         self.inputs = inputs
         self.bias = bias
-        self.incoming_weights = incoming_weights
+        self.incoming_unweighted = incoming_unweighted
         self.affects = affects
         self.length = len(self.inputs)
         self.net = 0
@@ -126,12 +126,6 @@ class Neuron():
 
     def dOut_dNet(self):
         return self.out * (1 - self.out)
-
-    def getInputOfPrev(self, prev_n):
-        for w, weight in enumerate(self.inputs):
-            if(self.incoming_weights[w] * prev_n.getOut() == weight):
-                return self.incoming_weights[w]
-        return
 
     def getBias(self):
         return self.bias
@@ -161,17 +155,18 @@ class Layer():
         weights = self.weight_inputs()
         for z in range(self.num_neurons):
             active_neuron_weights = []
-            original_weights = []
+            inputs = []
             weight_history = []
 
+            for i in self.prev_layer.neurons:
+                inputs.append(i.getOut())
             for k in range(0, len(weights), int(len(weights) / self.prev_layer.num_neurons)):
                 active_neuron_weights.append(weights[k + z])
-                original_weights.append(self.layer_weights[k + z])
-            weight_history = original_weights
+                weight_history.append(self.layer_weights[k + z])
             for neuron in self.prev_layer.neurons:
                 for element in neuron.affects:
                     weight_history.append(element)
-            self.neurons.append(Neuron(active_neuron_weights, self.biases[z], original_weights, weight_history))
+            self.neurons.append(Neuron(active_neuron_weights, self.biases[z], inputs, weight_history))
 
     def createInputNeurons(self):
         weights = self.weight_inputs()
@@ -194,7 +189,7 @@ class Layer():
         return self.num_neurons
 
     def addPartial(self, dev):
-        self.partial_dev.append(dev)
+        self.partial_dev.append(dev) #pos. have partial_dev have subcategories
 
 class Network():
     def __init__(self, sys_inputs, target_output, learning_rate):
@@ -233,14 +228,22 @@ class Network():
         self.layers[-1].setLayerOutputs()
 
     # first calculate all the partial derivatives then use pathing for proper sequence
-    def neuron_pathing(self, weight): #TODO: still need to fix - sometimes has path 3 other 5
+    def neuron_pathing(self, weight, layer_num):
+        w = self.weight_dict.get(weight)
+        layer = self.layers[layer_num]
         path = []
 
-        for layer in self.layers:
-            for neuron in layer.neurons:
-                if self.weight_dict.get(weight) in neuron.affects:
-                    path.append(neuron)
+        for active_neuron in layer.neurons:
+
+            if w in active_neuron.incoming_unweighted: #incoming weights is not exclusively between prev and current layer
+                path.append(active_neuron)
+                return path #TODO: not breaking at correct time resulting in layer index out of range
+
+            if w in active_neuron.affects:
+                path.append(active_neuron)
+                path.append(self.neuron_pathing(weight, layer_num - 1))
         return path
+        #TODO: this isn't returning anything right now
 
     def calc_all_partials(self):
         # calculate dError_dOut
@@ -325,7 +328,7 @@ class Network():
             print()
 
         if lookFor:
-            path = self.neuron_pathing(lookFor)
+            path = self.neuron_pathing(lookFor, -1)
 
             print(f'Weight Path for weight {lookFor}')
             for segment in path:
@@ -348,7 +351,7 @@ def main():
     target_output = [0.01, 0.99]
     propagation_weights = [0.15, 0.20, 0.25, 0.30, 0.40, 0.45, 0.50, 0.55]
     propagation_biases = [0.35, 0.35, 0.60, 0.60]
-    weight_seek = 5
+    weight_seek = 0
 
     # create a network and instatiate the weights, biases, and nuerons
     network = Network(sys_input, target_output, learning_rate)
@@ -357,10 +360,10 @@ def main():
     network.addLayer(len(target_output))
 
     network.labelWeights()
-    network.neuron_pathing(weight_seek)
-    network.calc_all_partials()
-    print(network.cumulative_partial(0, network.layers[-1]))
-    network.printInfo()
+    network.neuron_pathing(weight_seek, -1)
+    #network.calc_all_partials()
+    #print(network.cumulative_partial(0, network.layers[-1]))
+    network.printInfo(lookFor=weight_seek)
 
     # run the test propogate on 2 x 2 network
     # propogation(
