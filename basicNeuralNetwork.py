@@ -23,7 +23,7 @@ for i in range(50) :
     Perceptron(0,0,0) #False or false
 
 x = int(input())
-y= int (input())
+y = int (input())
 outputP = x*weights[0] + y*weights[1] + bias*weights[2]
 if outputP > 0 : #activation function
     outputP = 1

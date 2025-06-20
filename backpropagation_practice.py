@@ -210,7 +210,7 @@ class Network():
             prev_layer_neurons = self.layers[-1].getNumNeurons()
 
         for w in range((num_neurons * prev_layer_neurons)):  
-            new_weights.append((np.random.rand() + 0.01) * (np.random.randint(5) + 0.01)) #TODO: figure out how to do better numbers
+            new_weights.append((np.random.rand() + 0.01) * (np.random.randint(5) + 0.01))
         self.network_weights.append(new_weights)
 
         new_biases = []
@@ -227,23 +227,22 @@ class Network():
             self.layers[-1].createInputNeurons()
         self.layers[-1].setLayerOutputs()
 
-    # first calculate all the partial derivatives then use pathing for proper sequence
     def neuron_pathing(self, weight, layer_num):
         w = self.weight_dict.get(weight)
         layer = self.layers[layer_num]
         path = []
 
         for active_neuron in layer.neurons:
+            thing = active_neuron.affects[0:(self.layers[0].num_neurons)]
 
-            if w in active_neuron.incoming_unweighted: #incoming weights is not exclusively between prev and current layer
+            if w in active_neuron.affects[0:(self.layers[0].num_neurons)]:
                 path.append(active_neuron)
-                return path #TODO: not breaking at correct time resulting in layer index out of range
+                return path
 
             if w in active_neuron.affects:
                 path.append(active_neuron)
                 path.append(self.neuron_pathing(weight, layer_num - 1))
         return path
-        #TODO: this isn't returning anything right now
 
     def calc_all_partials(self):
         # calculate dError_dOut
@@ -327,13 +326,13 @@ class Network():
                 print(f'\tW{nLW} --> {self.weight_dict.get(nLW)}')
             print()
 
-        if lookFor:
+        if lookFor != None:
             path = self.neuron_pathing(lookFor, -1)
 
             print(f'Weight Path for weight {lookFor}')
             for segment in path:
                 print(f'\t{segment}')
-            print(f'\tPath length: {len(path)}')
+            print(f'Path length: {count}')
             print()
         
         if dispPart:
@@ -364,6 +363,8 @@ def main():
     #network.calc_all_partials()
     #print(network.cumulative_partial(0, network.layers[-1]))
     network.printInfo(lookFor=weight_seek)
+
+    print('blah')
 
     # run the test propogate on 2 x 2 network
     # propogation(
