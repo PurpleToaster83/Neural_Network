@@ -248,46 +248,53 @@ class Network():
 
         # ***** important: order added matters *****
 
-        #last layer dErrorTotal_dOut
-        layer = self.layers[-1]
+        layer = self.layers[0] # first layer
+
+        for neuron in layer.neurons:
+
+            for w, weight in enumerate(neuron.affects): # compute dNet_dW
+                layer.addPartial(self.sys_inputs[w % 2])
+
+            layer.addPartial(neuron.dOut_dNet()) # do this in here to keep order?
+
+        layer = self.layers[-1] # last layer
         for n, neuron in enumerate(layer.neurons):
-            layer.addPartial((-2 / layer.num_neurons) * (self.target_output[n] - neuron.getOut()))
+            layer.addPartial( # add dErrorT_dOut
+                (2 / layer.num_neurons) * (self.target_output[n] - neuron.getOut())
+            )
 
-        # everything else should be generally the same and done for each layer
-        for l in range(len(self.layers) - 1, 0):
-            layer = self.layers[l]
-            for neuron in layer.neurons:
-                layer.addPartial(neuron.getOut() * (1 - neuron.getOut()))
+            layer.addPartial(neuron.dOut_dNet())
 
-                for prev_neuron in layer.prev_layer.neurons:
-                    pass
-                    # layer.addPartial( connecting weight)
-                #TODO: do dNet_dPrevOut
+            for pN, pNeuron in enumerate(layer.prev_layer.neurons): # add dNet_dPrevOut
+                layer.addPartial(layer.layer_weights[n + (layer.num_neurons * pN)])
 
+        for layer in self.layers[1:-1]: # every other layer
+            for n, neuron in enumerate(layer.neurons):
+                layer.addPartial(neuron.dOut_dNet())
 
+                for pN, pNeuron in enumerate(layer.prev_layer.neurons):
+                    layer.addPartial(layer.layer_weights[n + (layer.num_neurons * pN)])
 
-        layer = self.layers[0]
-        for input in self.sys_inputs:
-            layer.addPartial(input)
 
     def cumulative_partial(self, weight, layer): #start with just one so easier to debug
-        weight_path = self.neuron_pathing(weight) # pos unpack the pathing to one array
+        pass
+        # weight_path = self.neuron_pathing(weight) # pos unpack the pathing to one array
 
-        # if not isinstance(layer, Layer):
-        #     return [weight_path[0].getOut()]
+        # # if not isinstance(layer, Layer):
+        # #     return [weight_path[0].getOut()]
 
-        current = []
-        #TODO: actually make work (follow the path!!!!!)
-        for n, neuron in enumerate(layer.neurons):
-            current.append(layer.partial_dev[n] * layer.partial_dev[n + 2]) #dErrorT_dNetO
-        # sum these at the end
+        # current = []
+        # #TODO: actually make work (follow the path!!!!!)
+        # for n, neuron in enumerate(layer.neurons):
+        #     current.append(layer.partial_dev[n] * layer.partial_dev[n + 2]) #dErrorT_dNetO
+        # # sum these at the end
 
-        elements_of_active = []
-        for curr_par in current:
-            prevLayer_pars = self.cumulative_partial(weight, layer.prev_layer)
-            for past_par in prevLayer_pars:
-                elements_of_active.append(curr_par * past_par)
-        return elements_of_active
+        # elements_of_active = []
+        # for curr_par in current:
+        #     prevLayer_pars = self.cumulative_partial(weight, layer.prev_layer)
+        #     for past_par in prevLayer_pars:
+        #         elements_of_active.append(curr_par * past_par)
+        # return elements_of_active
 
         #TODO: figure out how to multiply/add partials
         # recursion is key?
@@ -358,7 +365,7 @@ def main():
 
     # create a network and instatiate the weights, biases, and nuerons
     network = Network(sys_input, target_output, learning_rate)
-    network.addLayer(2, layer_type='input')
+    network.addLayer(3, layer_type='input')
     network.addLayer(2)
     network.addLayer(len(target_output))
 
