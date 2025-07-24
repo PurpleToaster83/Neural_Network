@@ -275,10 +275,10 @@ class Network():
                 for pN, pNeuron in enumerate(layer.prev_layer.neurons):
                     layer.addPartial(layer.layer_weights[n + (layer.num_neurons * pN)])
 
-
     def cumulative_partial(self, weight, layer): #start with just one so easier to debug
-        pass
-        # weight_path = self.neuron_pathing(weight) # pos unpack the pathing to one array
+        weight_path = self.neuron_pathing(weight, -1) # pos unpack the pathing to one array
+        for blah in weight_path:
+            print(blah)
 
         # # if not isinstance(layer, Layer):
         # #     return [weight_path[0].getOut()]
@@ -371,7 +371,7 @@ def main():
 
     network.labelWeights()
     network.calc_all_partials()
-    #print(network.cumulative_partial(0, network.layers[-1]))
+    network.cumulative_partial(0, network.layers[-1])
     network.printInfo(dispPart = True)
 
     print('blah')
