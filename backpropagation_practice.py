@@ -279,14 +279,12 @@ class Network():
         for blah in weight_path:
             print(blah)
             threads = []
-            # [layer.partial_dev[0] * layer.partial_dev[2], layer.partial_dev[1] * layer.partial_dev[3]] # need change modular
             
             # create threads will follow down
             for t in range(layer.num_neurons):
                 threads.append(layer.partial_dev[t] * layer.partial_dev[t + layer.prev_layer.num_neurons])
-            # recursive statement based on path
+                #TODO: recursive call
             return sum(threads)
-
 
         #TODO: need a base case
         if layer == self.layers[0]:
