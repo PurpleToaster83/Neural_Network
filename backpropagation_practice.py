@@ -233,8 +233,6 @@ class Network():
         path = []
 
         for active_neuron in layer.neurons:
-            thing = active_neuron.affects[0:(self.layers[0].num_neurons)]
-
             if w in active_neuron.affects[0:(self.layers[0].num_neurons)]:
                 path.append(active_neuron)
                 return path
@@ -255,7 +253,7 @@ class Network():
             for w, weight in enumerate(neuron.affects): # compute dNet_dW
                 layer.addPartial(self.sys_inputs[w % 2])
 
-            layer.addPartial(neuron.dOut_dNet()) # do this in here to keep order?
+            layer.addPartial(neuron.dOut_dNet())
 
         layer = self.layers[-1] # last layer
         for n, neuron in enumerate(layer.neurons):
@@ -275,8 +273,8 @@ class Network():
                 for pN, pNeuron in enumerate(layer.prev_layer.neurons):
                     layer.addPartial(layer.layer_weights[n + (layer.num_neurons * pN)])
 
-
-    def cumulative_partial(self, weight, layer): #start with just one so easier to debug
+    def cumulative_partial(self, weight, layer_num): #start with just one so easier to debug
+        layer = self.layers[layer_num]
         weight_path = self.neuron_pathing(weight, -1) # pos unpack the pathing to one array
         for blah in weight_path:
             print(blah)
@@ -289,6 +287,15 @@ class Network():
             # recursive statement based on path
             return sum(threads)
 
+
+        #TODO: need a base case
+        if layer == self.layers[0]:
+            #layer.partial_dev[dI_dW loc.] * layer.partial_dev[dOut_dNet]
+            return None
+
+        for neuron in layer:
+            #TODO: need to create the logic for sum and multiplying
+            return self.cumulative_partial(weight, layer_num - 1)
 
         # # if not isinstance(layer, Layer):
         # #     return [weight_path[0].getOut()]
@@ -375,13 +382,13 @@ def main():
 
     # create a network and instatiate the weights, biases, and nuerons
     network = Network(sys_input, target_output, learning_rate)
-    network.addLayer(3, layer_type='input')
+    network.addLayer(2, layer_type='input')
     network.addLayer(2)
     network.addLayer(len(target_output))
 
     network.labelWeights()
     network.calc_all_partials()
-    network.cumulative_partial(0, network.layers[-1])
+    network.cumulative_partial(0, -1)
     network.printInfo(dispPart = True)
 
     print('blah')
