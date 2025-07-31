@@ -275,10 +275,20 @@ class Network():
                 for pN, pNeuron in enumerate(layer.prev_layer.neurons):
                     layer.addPartial(layer.layer_weights[n + (layer.num_neurons * pN)])
 
+
     def cumulative_partial(self, weight, layer): #start with just one so easier to debug
         weight_path = self.neuron_pathing(weight, -1) # pos unpack the pathing to one array
         for blah in weight_path:
             print(blah)
+            threads = []
+            # [layer.partial_dev[0] * layer.partial_dev[2], layer.partial_dev[1] * layer.partial_dev[3]] # need change modular
+            
+            # create threads will follow down
+            for t in range(layer.num_neurons):
+                threads.append(layer.partial_dev[t] * layer.partial_dev[t + layer.prev_layer.num_neurons])
+            # recursive statement based on path
+            return sum(threads)
+
 
         # # if not isinstance(layer, Layer):
         # #     return [weight_path[0].getOut()]
