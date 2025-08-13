@@ -227,19 +227,23 @@ class Network():
             self.layers[-1].createInputNeurons()
         self.layers[-1].setLayerOutputs()
 
+    # have more like ideal
     def neuron_pathing(self, weight, layer_num):
         w = self.weight_dict.get(weight)
         layer = self.layers[layer_num]
         path = []
 
-        for active_neuron in layer.neurons:
+        for an, active_neuron in enumerate(layer.neurons):
             if w in active_neuron.affects[0:(self.layers[0].num_neurons)]:
                 path.append(active_neuron)
                 return path
 
             if w in active_neuron.affects:
-                path.append(active_neuron)
-                path.append(self.neuron_pathing(weight, layer_num - 1))
+                path.append([active_neuron])
+                if (layer_num == -1 or layer_num == 0):
+                    path.append(self.neuron_pathing(weight, layer_num - 1)) #TODO: fix embedded arrays in path
+                else:
+                    path[an].append(self.neuron_pathing(weight, layer_num - 1))
         return path
 
     def calc_all_partials(self):
@@ -273,46 +277,33 @@ class Network():
                 for pN, pNeuron in enumerate(layer.prev_layer.neurons):
                     layer.addPartial(layer.layer_weights[n + (layer.num_neurons * pN)])
 
-    def cumulative_partial(self, weight, layer_num): #start with just one so easier to debug
+    def cumulative_partial(self, weight, weight_path, w_idx, layer_num):
         layer = self.layers[layer_num]
-        weight_path = self.neuron_pathing(weight, -1) # pos unpack the pathing to one array
-        for blah in weight_path:
-            print(blah)
-            threads = []
-            
-            # create threads will follow down
-            for t in range(layer.num_neurons):
-                threads.append(layer.partial_dev[t] * layer.partial_dev[t + layer.prev_layer.num_neurons])
-                #TODO: recursive call
-            return sum(threads)
+        blah = weight_path[w_idx]
+        
+        threads = []
 
-        #TODO: need a base case
-        if layer == self.layers[0]:
-            #layer.partial_dev[dI_dW loc.] * layer.partial_dev[dOut_dNet]
-            return None
-
-        for neuron in layer:
-            #TODO: need to create the logic for sum and multiplying
-            return self.cumulative_partial(weight, layer_num - 1)
-
-        # # if not isinstance(layer, Layer):
-        # #     return [weight_path[0].getOut()]
-
-        # current = []
-        # #TODO: actually make work (follow the path!!!!!)
-        # for n, neuron in enumerate(layer.neurons):
-        #     current.append(layer.partial_dev[n] * layer.partial_dev[n + 2]) #dErrorT_dNetO
-        # # sum these at the end
-
-        # elements_of_active = []
-        # for curr_par in current:
-        #     prevLayer_pars = self.cumulative_partial(weight, layer.prev_layer)
-        #     for past_par in prevLayer_pars:
-        #         elements_of_active.append(curr_par * past_par)
-        # return elements_of_active
-
-        #TODO: figure out how to multiply/add partials
-        # recursion is key?
+        thing = self.weight_dict.get(weight)
+        stuff = blah.affects[0:(len(self.sys_inputs) * self.layers[0].num_neurons)]
+        if self.weight_dict.get(weight) in blah.affects[0:(len(self.sys_inputs) * self.layers[0].num_neurons)]:
+            return layer.partial_dev[weight % self.layers.index(layer)] * layer.partial_dev[weight % self.layers.index(layer) + layer.prev_layer.num_neurons]
+        
+        # create threads will follow down
+        for t in range(layer.num_neurons):
+            #Use t to solve the embedded array issue
+            # renenber the .split() method
+            threads.append(layer.partial_dev[t] * layer.partial_dev[t + layer.prev_layer.num_neurons])
+            threads[t] *= self.cumulative_partial(weight, weight_path[t], w_idx - 1, - 1)
+        return sum(threads)
+        
+    def updateWeights(self):
+        for l in range(len(self.layers)):
+            for w, weight in enumerate(self.network_weights[l]):
+                #TODO: check the dict index number
+                idx = ((l + 1) * w)
+                weight_path = self.neuron_pathing(idx, -1) # pos unpack the pathing to one array
+                factor = self.cumulative_partial(idx, weight_path, -1, -1) #This should not be a none_type
+                weight = weight - (self.learning_rate * factor)
 
     def labelWeights(self):
         wCount = 0
@@ -386,8 +377,8 @@ def main():
 
     network.labelWeights()
     network.calc_all_partials()
-    network.cumulative_partial(0, -1)
-    network.printInfo(dispPart = True)
+    network.updateWeights()
+    network.printInfo(dispPart = False)
 
     print('blah')
 
