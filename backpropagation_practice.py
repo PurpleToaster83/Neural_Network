@@ -241,9 +241,9 @@ class Network():
             if w in active_neuron.affects:
                 path.append([active_neuron])
                 if (layer_num == -1 or layer_num == 0):
-                    path.append(self.neuron_pathing(weight, layer_num - 1)) #TODO: fix embedded arrays in path
+                    return (self.neuron_pathing(weight, layer_num - 1)) #TODO: fix embedded arrays in path
                 else:
-                    path[an].append(self.neuron_pathing(weight, layer_num - 1))
+                    return (self.neuron_pathing(weight, layer_num - 1)) #TODO: should this and above be returns?
         return path
 
     def calc_all_partials(self):
