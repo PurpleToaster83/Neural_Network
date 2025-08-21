@@ -227,83 +227,31 @@ class Network():
             self.layers[-1].createInputNeurons()
         self.layers[-1].setLayerOutputs()
 
-    # have more like ideal
-    def neuron_pathing(self, weight, layer_num):
-        w = self.weight_dict.get(weight)
-        layer = self.layers[layer_num]
-        path = []
+    def cumulative_partial(self, w):
+        layer = self.layers[-1]
+        weight = self.weight_dict.get(w)
 
-        for an, active_neuron in enumerate(layer.neurons):
-            if w in active_neuron.affects[0:(self.layers[0].num_neurons)]:
-                path.append(active_neuron)
-                return path
-
-            if w in active_neuron.affects:
-                path.append([active_neuron])
-                if (layer_num == -1 or layer_num == 0):
-                    return (self.neuron_pathing(weight, layer_num - 1)) #TODO: fix embedded arrays in path
-                else:
-                    return (self.neuron_pathing(weight, layer_num - 1)) #TODO: should this and above be returns?
-        return path
-
-    def calc_all_partials(self):
-
-        # ***** important: order added matters *****
-
-        layer = self.layers[0] # first layer
-
-        for neuron in layer.neurons:
-
-            for w, weight in enumerate(neuron.affects): # compute dNet_dW
-                layer.addPartial(self.sys_inputs[w % 2])
-
-            layer.addPartial(neuron.dOut_dNet())
-
-        layer = self.layers[-1] # last layer
-        for n, neuron in enumerate(layer.neurons):
-            layer.addPartial( # add dErrorT_dOut
-                (2 / layer.num_neurons) * (self.target_output[n] - neuron.getOut())
-            )
-
-            layer.addPartial(neuron.dOut_dNet())
-
-            for pN, pNeuron in enumerate(layer.prev_layer.neurons): # add dNet_dPrevOut
-                layer.addPartial(layer.layer_weights[n + (layer.num_neurons * pN)])
-
-        for layer in self.layers[1:-1]: # every other layer
-            for n, neuron in enumerate(layer.neurons):
-                layer.addPartial(neuron.dOut_dNet())
-
-                for pN, pNeuron in enumerate(layer.prev_layer.neurons):
-                    layer.addPartial(layer.layer_weights[n + (layer.num_neurons * pN)])
-
-    def cumulative_partial(self, weight, weight_path, w_idx, layer_num):
-        layer = self.layers[layer_num]
-        blah = weight_path[w_idx]
-        
         threads = []
+        for n, neuron in enumerate(layer.neurons):
+            threads.append(
+                (2 / layer.num_neurons) * (self.target_output[n] - neuron.getOut()) * neuron.dOut_dNet()
+        )
 
-        thing = self.weight_dict.get(weight)
-        stuff = blah.affects[0:(len(self.sys_inputs) * self.layers[0].num_neurons)]
-        if self.weight_dict.get(weight) in blah.affects[0:(len(self.sys_inputs) * self.layers[0].num_neurons)]:
-            return layer.partial_dev[weight % self.layers.index(layer)] * layer.partial_dev[weight % self.layers.index(layer) + layer.prev_layer.num_neurons]
-        
-        # create threads will follow down
-        for t in range(layer.num_neurons):
-            #Use t to solve the embedded array issue
-            # renenber the .split() method
-            threads.append(layer.partial_dev[t] * layer.partial_dev[t + layer.prev_layer.num_neurons])
-            threads[t] *= self.cumulative_partial(weight, weight_path[t], w_idx - 1, - 1)
-        return sum(threads)
-        
-    def updateWeights(self):
-        for l in range(len(self.layers)):
-            for w, weight in enumerate(self.network_weights[l]):
-                #TODO: check the dict index number
-                idx = ((l + 1) * w)
-                weight_path = self.neuron_pathing(idx, -1) # pos unpack the pathing to one array
-                factor = self.cumulative_partial(idx, weight_path, -1, -1) #This should not be a none_type
-                weight = weight - (self.learning_rate * factor)
+        for thread in threads:
+            thread *= self.dNet_dPrevOut(weight, layer, n)
+
+        return sum(threads) # return that sum at the end
+
+    def dNet_dPrevOut(self, weight, layer, n): 
+        for pN, pNeuron in enumerate(layer.prev_layer.neurons): #TODO: not breaking when should
+          if weight in pNeuron.affects[0:(len(pNeuron.incoming_unweighted) * self.layers[0].num_neurons)]: #TODO: this is where it is, the effects index should be dependent on the level
+            return pNeuron.incoming_unweighted[pN]
+          connector_weight = layer.layer_weights[n + (layer.num_neurons) * pN]
+          return sum(connector_weight * pNeuron.dOut_dNet() * self.dNet_dPrevOut(weight, layer.prev_layer, pN))
+
+    def updateAllWeights(self):
+        #TODO
+        pass
 
     def labelWeights(self):
         wCount = 0
@@ -376,8 +324,10 @@ def main():
     network.addLayer(len(target_output))
 
     network.labelWeights()
-    network.calc_all_partials()
-    network.updateWeights()
+    print(f'dTotalError_dW0: {network.cumulative_partial(0)} (Check)')
+    print(f'dTotalError_dW0: {network.cumulative_partial(5)} (Check)')
+    # print(f'dTotalError_dW0: {network.cumulative_partial(10)} (Check)')
+    # network.updateAllWeights()
     network.printInfo(dispPart = False)
 
     print('blah')
