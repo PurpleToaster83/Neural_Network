@@ -246,7 +246,7 @@ class Network():
         for t, thread in enumerate(threads):
             thread *= self.dNet_dPrevOut(weight, layer_num, layer, t)
 
-        return sum(threads) # return that sum at the end
+        return sum(threads)
 
     def dNet_dPrevOut(self, weight, layer_num, layer, n):
         sub_threads = []
