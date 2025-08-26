@@ -230,24 +230,35 @@ class Network():
     def cumulative_partial(self, w):
         layer = self.layers[-1]
         weight = self.weight_dict.get(w)
+        layer_num = None
+
+        for l, level in enumerate(self.layers):
+            if weight in level.layer_weights:
+                layer_num = l
+                break
 
         threads = []
         for n, neuron in enumerate(layer.neurons):
             threads.append(
                 (2 / layer.num_neurons) * (self.target_output[n] - neuron.getOut()) * neuron.dOut_dNet()
-        )
+            )
 
-        for thread in threads:
-            thread *= self.dNet_dPrevOut(weight, layer, n)
+        for t, thread in enumerate(threads):
+            thread *= self.dNet_dPrevOut(weight, layer_num, layer, t)
 
         return sum(threads) # return that sum at the end
 
-    def dNet_dPrevOut(self, weight, layer, n): 
+    def dNet_dPrevOut(self, weight, layer_num, layer, n):
+        sub_threads = []
         for pN, pNeuron in enumerate(layer.prev_layer.neurons): #TODO: not breaking when should
-          if weight in pNeuron.affects[0:(len(pNeuron.incoming_unweighted) * self.layers[0].num_neurons)]: #TODO: this is where it is, the effects index should be dependent on the level
+          index_num = int((len(pNeuron.incoming_unweighted) * self.layers[0].num_neurons) / layer.num_neurons)
+          if weight in pNeuron.affects[0:int((len(pNeuron.incoming_unweighted) * self.layers[0].num_neurons) / layer.num_neurons)]: #TODO: only half of current layer weights should be in effects
             return pNeuron.incoming_unweighted[pN]
+          elif pNeuron in self.layers[layer_num].neurons:
+              return 0
           connector_weight = layer.layer_weights[n + (layer.num_neurons) * pN]
-          return sum(connector_weight * pNeuron.dOut_dNet() * self.dNet_dPrevOut(weight, layer.prev_layer, pN))
+          sub_threads.append(connector_weight * pNeuron.dOut_dNet() * self.dNet_dPrevOut(weight, layer_num, layer.prev_layer, pN))
+        return sum(sub_threads)
 
     def updateAllWeights(self):
         #TODO
@@ -325,8 +336,8 @@ def main():
 
     network.labelWeights()
     print(f'dTotalError_dW0: {network.cumulative_partial(0)} (Check)')
-    print(f'dTotalError_dW0: {network.cumulative_partial(5)} (Check)')
-    # print(f'dTotalError_dW0: {network.cumulative_partial(10)} (Check)')
+    print(f'dTotalError_dW5: {network.cumulative_partial(5)} (Check)') # definetly wrong because should not be same value
+    print(f'dTotalError_dW10: {network.cumulative_partial(10)} (Check)')
     # network.updateAllWeights()
     network.printInfo(dispPart = False)
 
