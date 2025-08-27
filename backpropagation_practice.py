@@ -210,12 +210,14 @@ class Network():
             prev_layer_neurons = self.layers[-1].getNumNeurons()
 
         for w in range((num_neurons * prev_layer_neurons)):  
-            new_weights.append((np.random.rand() + 0.01) * (np.random.randint(5) + 0.01))
+            # new_weights.append((np.random.rand() + 0.01) * (np.random.randint(5) + 0.01)) #TODO: reimplement later, also don't use np
+            new_weights.append(0.1)
         self.network_weights.append(new_weights)
 
         new_biases = []
         for b in range(num_neurons):
-            new_biases.append(np.random.rand() * np.random.randint(10))
+            # new_biases.append(np.random.rand() * np.random.randint(10)) #TODO: reimplement later, also don't use np
+            new_biases.append(0.5)
 
         self.network_biases.append(new_biases)
 
@@ -227,15 +229,9 @@ class Network():
             self.layers[-1].createInputNeurons()
         self.layers[-1].setLayerOutputs()
 
-    def cumulative_partial(self, w):
+    def cumulative_partial(self, w, layer_num):
         layer = self.layers[-1]
         weight = self.weight_dict.get(w)
-        layer_num = None
-
-        for l, level in enumerate(self.layers):
-            if weight in level.layer_weights:
-                layer_num = l
-                break
 
         threads = []
         for n, neuron in enumerate(layer.neurons):
@@ -335,9 +331,10 @@ def main():
     network.addLayer(len(target_output))
 
     network.labelWeights()
-    print(f'dTotalError_dW0: {network.cumulative_partial(0)} (Check)')
-    print(f'dTotalError_dW5: {network.cumulative_partial(5)} (Check)') # definetly wrong because should not be same value
-    print(f'dTotalError_dW10: {network.cumulative_partial(10)} (Check)')
+    print(f'dTotalError_dW0: {network.cumulative_partial(0, 0)} (Check)')
+    # print(f'dTotalError_dW5: {network.cumulative_partial(5, 1)} (Check)') # definetly wrong because should not be same value
+    # print(f'dTotalError_dW10: {network.cumulative_partial(10, 2)} (Check)') # not work
+    
     # network.updateAllWeights()
     network.printInfo(dispPart = False)
 
