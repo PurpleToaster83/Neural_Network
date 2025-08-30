@@ -247,8 +247,8 @@ class Network():
     def dNet_dPrevOut(self, weight, layer_num, layer, n):
         sub_threads = []
         for pN, pNeuron in enumerate(layer.prev_layer.neurons): #TODO: not breaking when should
-          index_num = int((len(pNeuron.incoming_unweighted) * self.layers[0].num_neurons) / layer.num_neurons)
-          if weight in pNeuron.affects[0:int((len(pNeuron.incoming_unweighted) * self.layers[0].num_neurons) / layer.num_neurons)]: #TODO: only half of current layer weights should be in effects
+          index_num = int((len(pNeuron.incoming_unweighted) * self.layers[layer_num].num_neurons) / layer.num_neurons)
+          if weight in pNeuron.affects[0:int((len(pNeuron.incoming_unweighted) * self.layers[layer_num].num_neurons) / layer.num_neurons)]: #TODO: only half of current layer weights should be in effects
             return pNeuron.incoming_unweighted[pN]
           elif pNeuron in self.layers[layer_num].neurons:
               return 0
