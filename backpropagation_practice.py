@@ -250,7 +250,7 @@ class Network():
             return pNeuron.incoming_unweighted[pN]
           elif pNeuron in self.layers[layer_num].neurons: # this is never hit
               return 0
-          connector_weight = layer.layer_weights[n + (layer.num_neurons) * pN]
+          connector_weight = layer.layer_weights[(n + (layer.num_neurons)) * pN]
           sub_threads.append(connector_weight * pNeuron.dOut_dNet() * self.dNet_dPrevOut(weight, layer_num, layer.prev_layer, pN))
         return sum(sub_threads)
 
