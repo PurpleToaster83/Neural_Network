@@ -244,13 +244,18 @@ class Network():
 
     def dNet_dPrevOut(self, weight, layer_num, layer, n):
         sub_threads = []
-        for pN, pNeuron in enumerate(layer.prev_layer.neurons): #TODO: not breaking when should
-          index_num = int((len(pNeuron.incoming_unweighted) * self.layers[layer_num].num_neurons) / layer.num_neurons)
-          if weight in pNeuron.affects[0:int((len(pNeuron.incoming_unweighted) * self.layers[layer_num].num_neurons) / layer.num_neurons) - 1]:
+        for pN, pNeuron in enumerate(layer.prev_layer.neurons):
+          print(f'dNet_dOut {pN}') #check the print (not correct for weight 0 [3 0s in row])
+          index_num = int((len(pNeuron.incoming_unweighted) * self.layers[layer_num].num_neurons) / layer.num_neurons) #still think that this is wrong
+          print(f'Index Num: {index_num}') #TODO: something with indexing and ordering of weights
+          for i_n in range(index_num):
+              print(f'Num #{i_n}: {self.weight_dict[i_n]}')
+          if weight in pNeuron.affects[0:int((len(pNeuron.incoming_unweighted) * self.layers[layer_num].num_neurons) / layer.num_neurons)]:
+            print(f'Return Incoming Unweighted: {pNeuron.incoming_unweighted[pN]}')
             return pNeuron.incoming_unweighted[pN]
-          elif pNeuron in self.layers[layer_num].neurons: # this is never hit
-              return 0
-          connector_weight = layer.layer_weights[(n + (layer.num_neurons)) * pN]
+          elif pNeuron in self.layers[layer_num].neurons:
+              return 0 # this is never hit (0 might not be correct)
+          connector_weight = layer.layer_weights[(n + layer.num_neurons) * pN]
           sub_threads.append(connector_weight * pNeuron.dOut_dNet() * self.dNet_dPrevOut(weight, layer_num, layer.prev_layer, pN))
         return sum(sub_threads)
 
@@ -330,8 +335,8 @@ def main():
 
     network.labelWeights()
     print(f'dTotalError_dW0: {network.cumulative_partial(0, 0)} (Check)')
-    print(f'dTotalError_dW5: {network.cumulative_partial(5, 1)} (Check)') # definetly wrong because should not be same value
-    # print(f'dTotalError_dW10: {network.cumulative_partial(10, 2)} (Check)') # not work
+    print(f'dTotalError_dW5: {network.cumulative_partial(4, 1)} (Check)') # definetly wrong because should not be same value
+    # print(f'dTotalError_dW10: {network.cumulative_partial(8, 2)} (Check)') # not work
     
     # network.updateAllWeights()
     network.printInfo(dispPart = False)
