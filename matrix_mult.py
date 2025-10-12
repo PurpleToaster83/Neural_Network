@@ -24,10 +24,5 @@ def main():
     for row in result:
         print(row)
 
-    #result
-    # [30, 36, 42]
-    # [66, 81, 96]
-    # [102, 126, 150]
-
 if __name__ == "__main__":
     main()
