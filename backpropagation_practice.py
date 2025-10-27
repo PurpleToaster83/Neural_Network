@@ -188,9 +188,6 @@ class Layer():
     def getNumNeurons(self):
         return self.num_neurons
 
-    def addPartial(self, dev):
-        self.partial_dev.append(dev) #pos. have partial_dev have subcategories
-
 class Network():
     def __init__(self, sys_inputs, target_output, learning_rate):
         self.sys_inputs = sys_inputs
@@ -228,36 +225,14 @@ class Network():
         self.layers[-1].setLayerOutputs()
 
     def cumulative_partial(self, w, layer_num):
-        layer = self.layers[-1]
-        weight = self.weight_dict.get(w)
+        #TODO: use matrix multiple
+        layer = self.layers[layer_num]
 
-        threads = []
-        for n, neuron in enumerate(layer.neurons):
-            threads.append(
-                (2 / layer.num_neurons) * (self.target_output[n] - neuron.getOut()) * neuron.dOut_dNet()
-            )
+        for neuron in layer:
+            pass
 
-        for t, thread in enumerate(threads):
-            thread *= self.dNet_dPrevOut(weight, layer_num, layer, t)
 
-        return sum(threads)
-
-    def dNet_dPrevOut(self, weight, layer_num, layer, n):
-        sub_threads = []
-        for pN, pNeuron in enumerate(layer.prev_layer.neurons):
-          print(f'dNet_dOut {pN}') #check the print (not correct for weight 0 [3 0s in row])
-          index_num = int((len(pNeuron.incoming_unweighted) * self.layers[layer_num].num_neurons) / layer.num_neurons) #still think that this is wrong
-          print(f'Index Num: {index_num}') #TODO: something with indexing and ordering of weights
-          for i_n in range(index_num):
-              print(f'Num #{i_n}: {self.weight_dict[i_n]}')
-          if weight in pNeuron.affects[0:int((len(pNeuron.incoming_unweighted) * self.layers[layer_num].num_neurons) / layer.num_neurons)]:
-            print(f'Return Incoming Unweighted: {pNeuron.incoming_unweighted[pN]}')
-            return pNeuron.incoming_unweighted[pN]
-          elif pNeuron in self.layers[layer_num].neurons:
-              return 0 # this is never hit (0 might not be correct)
-          connector_weight = layer.layer_weights[(n + layer.num_neurons) * pN]
-          sub_threads.append(connector_weight * pNeuron.dOut_dNet() * self.dNet_dPrevOut(weight, layer_num, layer.prev_layer, pN))
-        return sum(sub_threads)
+        # initial is the hardest part, once past initial all are full
 
     def updateAllWeights(self):
         #TODO
@@ -277,6 +252,15 @@ class Network():
         for i in range(len(self.target_output)):
             sum += (1 / len(self.target_output)) * pow((self.target_output[i] - self.layers[-1].neurons[i].getOut()), 2)
             return sum
+
+    def matrix_mult(self, matrix_a, matrix_b):
+        matrix_r = [[0 for i in range(len(matrix_a))] for j in range(len(matrix_b[0]))]
+
+        for i in range(len(matrix_a)):
+            for j in range(len(matrix_b)):
+                for k in range(len(matrix_a[0])):
+                    matrix_r[i][j] += matrix_a[i][k] * matrix_b[k][j]
+        return matrix_r
 
     def printInfo(self, arch=False, in_out=False, labelW=False, lookFor=None, dispPart=False, error=False):
         if arch:
@@ -327,7 +311,7 @@ def main():
     propagation_biases = [0.35, 0.35, 0.60, 0.60]
     weight_seek = 0
 
-    # create a network and instatiate the weights, biases, and nuerons
+    # create a network and instatiate the weights, biases, and neurons
     network = Network(sys_input, target_output, learning_rate)
     network.addLayer(2, layer_type='input')
     network.addLayer(2)
