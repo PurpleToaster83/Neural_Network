@@ -197,6 +197,7 @@ class Network():
         self.layers = []
         self.learning_rate = learning_rate
         self.weight_dict = {}
+        self.num_layers = len(self.layers)
 
     def addLayer(self, num_neurons, layer_type = 'hidden'):
         new_weights = []
@@ -225,11 +226,22 @@ class Network():
         self.layers[-1].setLayerOutputs()
 
     def cumulative_partial(self, w, layer_num):
-        #TODO: use matrix multiple
         layer = self.layers[layer_num]
 
-        for neuron in layer:
+        # calculate the scalar out fron of the matrixes
+        if layer_num == 0:
+            dInit = self.sys_inputs.index(self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)])
+        else:
+            dInit = layer.prev_layer.neurons[self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)]].getOut() #should be different from 0
+
+        for neuron in layer.neurons:
             pass
+
+        # 1:  1xnum_neurons matrix
+        # 2: diagnol matrix
+        # 3: full matrix (similar by columns)
+        # 4: repeat 2/3 until end altenating
+        # 5: num_neurons output x 1 matrix
 
 
         # initial is the hardest part, once past initial all are full
