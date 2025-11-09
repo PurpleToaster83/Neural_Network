@@ -237,6 +237,8 @@ class Network():
         for neuron in layer.neurons:
             pass
 
+            # seems simple enough to make matrices but how know for how long to make?
+
         # 1:  1xnum_neurons matrix
         # 2: diagnol matrix
         # 3: full matrix (similar by columns)
