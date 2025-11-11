@@ -230,12 +230,10 @@ class Network():
 
         # dNet_dWeight
         if layer_num == 0:
-            dInit = self.sys_inputs.index(self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)])
+            dInit = self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)]
         else:
-            dInit = layer.prev_layer.neurons[self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)]].getOut() # this is wrong should not have self.sys_inptus in it
-        # dInit *= .getOut() * (1 - .getOut())
-
-        #TODO: apply dout_dnet to dInit
+            dInit = layer.prev_layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut() # check both of these
+        dInit *= layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut() * (1 - layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut()) #TODO: this is definatly wrong but check
 
         m = []
         # below loop will be nested in some sort of for loop iterating over layers in network
