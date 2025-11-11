@@ -228,14 +228,22 @@ class Network():
     def cumulative_partial(self, w, layer_num):
         layer = self.layers[layer_num]
 
-        # calculate the scalar out fron of the matrixes
+        # dNet_dWeight
         if layer_num == 0:
             dInit = self.sys_inputs.index(self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)])
         else:
-            dInit = layer.prev_layer.neurons[self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)]].getOut() #should be different from 0
+            dInit = layer.prev_layer.neurons[self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)]].getOut() # this is wrong should not have self.sys_inptus in it
+        # dInit *= .getOut() * (1 - .getOut())
 
+        #TODO: apply dout_dnet to dInit
+
+        m = []
+        # below loop will be nested in some sort of for loop iterating over layers in network
         for neuron in layer.neurons:
-            pass
+            print(neuron)
+            m.append(0) #netH0_outI0 dependant on connector weight
+        # when advance layer
+        print(m)
 
             # seems simple enough to make matrices but how know for how long to make?
 
@@ -247,6 +255,7 @@ class Network():
 
 
         # initial is the hardest part, once past initial all are full
+        #TODO: probably don't need partial dev list in layers after implement correctly
 
     def updateAllWeights(self):
         #TODO
@@ -276,7 +285,7 @@ class Network():
                     matrix_r[i][j] += matrix_a[i][k] * matrix_b[k][j]
         return matrix_r
 
-    def printInfo(self, arch=False, in_out=False, labelW=False, lookFor=None, dispPart=False, error=False):
+    def printInfo(self, arch=False, in_out=False, labelW=False, dispPart=False, error=False):
         if arch:
             print('Architecture')
             for l, index_l in enumerate(self.layers):
@@ -298,14 +307,6 @@ class Network():
             print("Labeled Weights:")
             for nLW in self.weight_dict:
                 print(f'\tW{nLW} --> {self.weight_dict.get(nLW)}')
-            print()
-
-        if lookFor != None:
-            path = self.neuron_pathing(lookFor, -1)
-
-            print(f'Weight Path for weight {lookFor}')
-            for segment in path:
-                print(f'\t{segment}')
             print()
         
         if dispPart:
@@ -333,7 +334,7 @@ def main():
 
     network.labelWeights()
     print(f'dTotalError_dW0: {network.cumulative_partial(0, 0)} (Check)')
-    print(f'dTotalError_dW5: {network.cumulative_partial(4, 1)} (Check)') # definetly wrong because should not be same value
+    # print(f'dTotalError_dW5: {network.cumulative_partial(4, 1)} (Check)') # definetly wrong because should not be same value
     # print(f'dTotalError_dW10: {network.cumulative_partial(8, 2)} (Check)') # not work
     
     # network.updateAllWeights()
