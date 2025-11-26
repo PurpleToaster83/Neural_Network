@@ -265,7 +265,10 @@ class Network():
                 m.append([sub_m])
             path.append(m)
         
-        #TODO: make one final matrice for dEn_dNetn
+        m = []
+        for n, neuron in enumerate(self.layers[-1].neurons):
+            #∂En_∂Outn * ∂Outn_∂Netn
+            m.append([(-1 * (self.target_output[n] - neuron.getOut())) * (neuron.getOut() * (1 - neuron.getOut()))]) #must be in brackets for the rows
 
         for e, element in enumerate(path):
             print(e)
