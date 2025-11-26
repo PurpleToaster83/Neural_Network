@@ -239,30 +239,38 @@ class Network():
         
         m = []
         for n, neuron in enumerate(layer.neurons):
-            print(neuron)
             m.append(layer.layer_weights[n * layer.num_neurons]) #netH0_outI0 dependant on connector weight
-        print(m)
         path.append(m)
-            
+
         for l in range(1, len(self.layers)):
             current_layer = self.layers[l]
             m = [] # reset m
-            
+
+            #append dOut_dNet
+            for n, neuron in enumerate(current_layer.neurons):
+                sub_m = []
+                for j in range(current_layer.prev_layer.num_neurons):
+                    if j == n:
+                        sub_m.append(neuron.getOut() * (1 - neuron.getOut()))
+                    else:
+                        sub_m.append(0)
+                m.append(sub_m)
+            path.append(m)
+
+            m = []
             sub_m = []
             for n, neuron in enumerate(current_layer.neurons): #TODO: check that this makes the matrice how I want it
-                sub_m.append(layer.layer_weights[n * layer.num_neurons])
+                sub_m.append(current_layer.layer_weights[n * current_layer.num_neurons])
             for i in range(current_layer.prev_layer.num_neurons):
                 m.append([sub_m])
             path.append(m)
-            
-            #append dOut_dNet
-            m = []
-            for n, neuron in enumerate(current_layer.neurons):
-                # make the 0 pos depending on n
-                m.append([])
-            path.append(m)
         
-        print(path) #TODO: probably a smarter way to print that is easier to debug
+        #TODO: make one final matrice for dEn_dNetn
+
+        for e, element in enumerate(path):
+            print(e)
+            for sub in element:
+                print(f'\t{sub}')
         
         # multiply all the matrices together and return
         running = [dInit]
