@@ -234,14 +234,42 @@ class Network():
         else:
             dInit = layer.prev_layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut() # check both of these
         dInit *= layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut() * (1 - layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut()) #TODO: this is definatly wrong but check
-
+          
+        path = []
+        
         m = []
-        # below loop will be nested in some sort of for loop iterating over layers in network
-        for neuron in layer.neurons:
+        for n, neuron in enumerate(layer.neurons):
             print(neuron)
-            m.append(0) #netH0_outI0 dependant on connector weight
-        # when advance layer
+            m.append(layer.layer_weights[n * layer.num_neurons]) #netH0_outI0 dependant on connector weight
         print(m)
+        path.append(m)
+            
+        for l in range(1, len(self.layers)):
+            current_layer = self.layers[l]
+            m = [] # reset m
+            
+            sub_m = []
+            for n, neuron in enumerate(current_layer.neurons): #TODO: check that this makes the matrice how I want it
+                sub_m.append(layer.layer_weights[n * layer.num_neurons])
+            for i in range(current_layer.prev_layer.num_neurons):
+                m.append([sub_m])
+            path.append(m)
+            
+            #append dOut_dNet
+            m = []
+            for n, neuron in enumerate(current_layer.neurons):
+                # make the 0 pos depending on n
+                m.append([])
+            path.append(m)
+        
+        print(path) #TODO: probably a smarter way to print that is easier to debug
+        
+        # multiply all the matrices together and return
+        running = [dInit]
+        for element in range(len(path) - 1):
+            running = self.matrix_mult(running, element + 1)            
+        return running
+
 
             # seems simple enough to make matrices but how know for how long to make?
 
@@ -254,7 +282,7 @@ class Network():
 
         # initial is the hardest part, once past initial all are full
         #TODO: probably don't need partial dev list in layers after implement correctly
-
+        
     def updateAllWeights(self):
         #TODO
         pass
