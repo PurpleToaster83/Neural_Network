@@ -283,9 +283,13 @@ class Network():
             starter.append(e * dInit)
 
         running = starter
-        for element in range(len(path) - 1):
+        for element in range(len(path) - 2):
             running = self.matrix_mult(running, path[element + 1])
-        return running
+        
+        total = 0
+        for r, run in enumerate(running):
+            total += (run * path[-1][r][0])
+        return total
         
     def updateAllWeights(self):
         #TODO
@@ -313,16 +317,14 @@ class Network():
         if type(matrix_a[0]) != list:
             matrix_a = [matrix_a]
             is_array = True
-
         for i in range(len(matrix_a)):
             for j in range(len(matrix_b)):
                 for k in range(len(matrix_a[0])):
-                    print(f'A {(matrix_a[i][k])}')
-                    print(f'B: {(matrix_b[k][j])}')
-                    matrix_r[i][j] += (matrix_a[i][k]) * (matrix_b[k][j])
+                    matrix_r[i][j] += matrix_a[i][k] * matrix_b[k][j]
 
         if is_array:
             matrix_r = matrix_r[0]
+
         return matrix_r
 
     def printInfo(self, arch=False, in_out=False, labelW=False, dispPart=False, error=False):
@@ -369,7 +371,7 @@ def main():
 
     network.labelWeights()
     print(f'dTotalError_dW0: {network.cumulative_partial(0, 0)} (Check)')
-    # print(f'dTotalError_dW5: {network.cumulative_partial(4, 1)} (Check)') # definetly wrong because should not be same value
+    print(f'dTotalError_dW5: {network.cumulative_partial(4, 1)} (Check)')
     # print(f'dTotalError_dW10: {network.cumulative_partial(8, 2)} (Check)') # not work
     
     # network.updateAllWeights()
