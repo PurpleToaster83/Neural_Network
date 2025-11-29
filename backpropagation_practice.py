@@ -138,7 +138,6 @@ class Layer():
         self.biases = biases
         self.neurons = []
         self.outputs = []
-        self.partial_dev = []
         self.layer_type = layer_type
 
     def weight_inputs(self):
@@ -269,6 +268,7 @@ class Network():
         for n, neuron in enumerate(self.layers[-1].neurons):
             #∂En_∂Outn * ∂Outn_∂Netn
             m.append([(-1 * (self.target_output[n] - neuron.getOut())) * (neuron.getOut() * (1 - neuron.getOut()))]) #must be in brackets for the rows
+        path.append(m)
 
         for e, element in enumerate(path):
             print(e)
@@ -283,22 +283,9 @@ class Network():
             starter.append(e * dInit)
 
         running = starter
-        for element in range(len(path) - 1): #TODO: make matrix_mult able to handle ints and normal arrays
-            running = self.matrix_mult(running, path[element + 1])        
-        return running # shouldn't running be collapsing to one number or need to sum the elements?
-
-
-            # seems simple enough to make matrices but how know for how long to make?
-
-        # 1: 1 x num_neurons matrix
-        # 2: diagnol matrix
-        # 3: full matrix (similar by columns)
-        # 4: repeat 2/3 until end altenating
-        # 5: num_neurons output x 1 matrix
-
-
-        # initial is the hardest part, once past initial all are full
-        #TODO: probably don't need partial dev list in layers after implement correctly
+        for element in range(len(path) - 1):
+            running = self.matrix_mult(running, path[element + 1])
+        return running
         
     def updateAllWeights(self):
         #TODO
@@ -332,7 +319,7 @@ class Network():
                 for k in range(len(matrix_a[0])):
                     print(f'A {(matrix_a[i][k])}')
                     print(f'B: {(matrix_b[k][j])}')
-                    matrix_r[i][j] += (matrix_a[i][k]) * (matrix_b[k][j]) # thinks we are tying to repeat a sequence not multiply (for some reason b is double bracketed)
+                    matrix_r[i][j] += (matrix_a[i][k]) * (matrix_b[k][j])
 
         if is_array:
             matrix_r = matrix_r[0]
@@ -360,11 +347,6 @@ class Network():
             print("Labeled Weights:")
             for nLW in self.weight_dict:
                 print(f'\tW{nLW} --> {self.weight_dict.get(nLW)}')
-            print()
-        
-        if dispPart:
-            for l, layer in enumerate(self.layers):
-                print(f'L{l} Partial Derv. : {layer.partial_dev}')
             print()
 
         if(error):
