@@ -262,7 +262,7 @@ class Network():
             for n, neuron in enumerate(current_layer.neurons): #TODO: check that this makes the matrice how I want it
                 sub_m.append(current_layer.layer_weights[n * current_layer.num_neurons])
             for i in range(current_layer.prev_layer.num_neurons):
-                m.append([sub_m])
+                m.append(sub_m)
             path.append(m)
         
         m = []
@@ -276,10 +276,16 @@ class Network():
                 print(f'\t{sub}')
         
         # multiply all the matrices together and return
-        running = [dInit]
-        for element in range(len(path) - 1):
-            running = self.matrix_mult(running, element + 1)            
-        return running
+
+        
+        starter = []
+        for e in path[0]:
+            starter.append(e * dInit)
+
+        running = starter
+        for element in range(len(path) - 1): #TODO: make matrix_mult able to handle ints and normal arrays
+            running = self.matrix_mult(running, path[element + 1])        
+        return running # shouldn't running be collapsing to one number or need to sum the elements?
 
 
             # seems simple enough to make matrices but how know for how long to make?
@@ -314,12 +320,22 @@ class Network():
             return sum
 
     def matrix_mult(self, matrix_a, matrix_b):
+        is_array = False
         matrix_r = [[0 for i in range(len(matrix_a))] for j in range(len(matrix_b[0]))]
+
+        if type(matrix_a[0]) != list:
+            matrix_a = [matrix_a]
+            is_array = True
 
         for i in range(len(matrix_a)):
             for j in range(len(matrix_b)):
                 for k in range(len(matrix_a[0])):
-                    matrix_r[i][j] += matrix_a[i][k] * matrix_b[k][j]
+                    print(f'A {(matrix_a[i][k])}')
+                    print(f'B: {(matrix_b[k][j])}')
+                    matrix_r[i][j] += (matrix_a[i][k]) * (matrix_b[k][j]) # thinks we are tying to repeat a sequence not multiply (for some reason b is double bracketed)
+
+        if is_array:
+            matrix_r = matrix_r[0]
         return matrix_r
 
     def printInfo(self, arch=False, in_out=False, labelW=False, dispPart=False, error=False):
