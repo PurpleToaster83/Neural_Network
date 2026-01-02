@@ -322,7 +322,7 @@ class Network():
                 m.append(sub_m)
             path.append(m)
 
-            if current_layer != self.layers[-1]:
+            if current_layer != self.layers[-1]: #TODO: matrice created below is not correct (make it a diagnol matrix instead, so look at what do above)
                 m = []
                 sub_m = []
                 for n, neuron in enumerate(current_layer.neurons):
