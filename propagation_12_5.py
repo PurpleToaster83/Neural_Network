@@ -295,23 +295,21 @@ class Network():
         if layer_num == 0:
             dInit = self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)]
         else:
-            dInit = layer.prev_layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut()
-        out = layer.neurons[int((w + 1 % len(layer.layer_weights)) / layer.num_neurons)].getOut()
-        dInit *= layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut() * (1 - layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut())
+            dInit = layer.prev_layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut() # check both of these
+        dInit *= layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut() * (1 - layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut()) #TODO: this is definatly wrong but check
           
         path = []
         
         m = []
-        for n, neuron in enumerate(self.layers[layer_num+1].neurons):
-            m.append(self.layers[layer_num+1].layer_weights[n + ((w % 2) * self.layers[layer_num+1].num_neurons)]) #netH0_outI0 dependant on connector weight
-            #TODO: this is wrong should index (0, 1) and (2, 3) for weights to start
+        for n, neuron in enumerate(layer.neurons):
+            m.append(layer.layer_weights[n * layer.num_neurons]) #netH0_outI0 dependant on connector weight
         path.append(m)
 
         for l in range(1, len(self.layers)):
             current_layer = self.layers[l]
-            m = []
+            m = [] # reset m
 
-
+            #append dOut_dNet
             for n, neuron in enumerate(current_layer.neurons):
                 sub_m = []
                 for j in range(current_layer.prev_layer.num_neurons):
@@ -322,28 +320,28 @@ class Network():
                 m.append(sub_m)
             path.append(m)
 
-            if current_layer != self.layers[-1]:
-                m = []
-                sub_m = []
-                for n, neuron in enumerate(current_layer.neurons):
-                    sub_m.append(current_layer.layer_weights[n * current_layer.num_neurons])
-                for i in range(current_layer.prev_layer.num_neurons):
-                    m.append(sub_m)
-                path.append(m)
+            m = []
+            sub_m = []
+            for n, neuron in enumerate(current_layer.neurons): #TODO: check that this makes the matrice how I want it
+                sub_m.append(current_layer.layer_weights[n * current_layer.num_neurons])
+            for i in range(current_layer.prev_layer.num_neurons):
+                m.append(sub_m)
+            path.append(m)
         
         m = []
         for n, neuron in enumerate(self.layers[-1].neurons):
             #∂En_∂Outn * ∂Outn_∂Netn
-            m.append([(-1 * (self.target_output[n] - neuron.getOut()))])
+            m.append([(-1 * (self.target_output[n] - neuron.getOut())) * (neuron.getOut() * (1 - neuron.getOut()))]) #must be in brackets for the rows
         path.append(m)
 
         for e, element in enumerate(path):
             print(e)
             for sub in element:
                 print(f'\t{sub}')
+        
+        # multiply all the matrices together and return
 
-
-
+        
         starter = []
         for e in path[0]:
             starter.append(e * dInit)
@@ -434,12 +432,10 @@ def main():
     # create a network and instatiate the weights, biases, and neurons
     network = Network(sys_input, target_output, learning_rate)
     network.addLayer(2, layer_type='input')
-    network.addLayer(2)
     network.addLayer(len(target_output))
 
     network.labelWeights()
-    print(f'dTotalError_dW0: {network.cumulative_partial(0, 0)}')
-    print(f'dTotalError_dW1: {network.cumulative_partial(1, 0)}')
+    print(f'dTotalError_dW0: {network.cumulative_partial(0, 0)} (Check)') #TODO: not corect number :(
     # print(f'dTotalError_dW5: {network.cumulative_partial(4, 1)} (Check)')
     # print(f'dTotalError_dW10: {network.cumulative_partial(8, 2)} (Check)')
     
@@ -453,7 +449,7 @@ def main():
             network_weights.append(network.network_weights[i][j])
         for k in range(2):
             network_biases.append(network.network_biases[i][k])
-    print(f'Propogation Results (W0):', propogate(learning_rate, sys_input, target_output, network_weights, network_biases)) #TODO: If do this check that the way think about weights in propogation consitant with the network
+    print(f'Propoation Results (W0):', propogate(learning_rate, sys_input, target_output, network_weights, network_biases)) #TODO: If do this check that the way think about weights in propogation consitant with the network
     print('blah')
 
 if __name__ == "__main__":
