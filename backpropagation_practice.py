@@ -303,7 +303,7 @@ class Network():
         
         m = []
         for n, neuron in enumerate(self.layers[layer_num+1].neurons):
-            m.append(self.layers[layer_num+1].layer_weights[n + ((w % 2) * self.layers[layer_num+1].num_neurons)]) #netH0_outI0 dependant on connector weight
+            m.append(self.layers[layer_num+1].layer_weights[n * self.layers[layer_num+1].num_neurons]) #netH0_outI0 dependant on connector weight
             #TODO: this is wrong should index (0, 1) and (2, 3) for weights to start
         path.append(m)
 
@@ -311,8 +311,7 @@ class Network():
             current_layer = self.layers[l]
             m = []
 
-
-            for n, neuron in enumerate(current_layer.neurons):
+            for n, neuron in enumerate(current_layer.neurons): #this is wrong should be indexing all weights within matrice
                 sub_m = []
                 for j in range(current_layer.prev_layer.num_neurons):
                     if j == n:
@@ -324,10 +323,20 @@ class Network():
 
             if current_layer != self.layers[-1]: #TODO: matrice created below is not correct (make it a diagnol matrix instead, so look at what do above)
                 m = []
-                sub_m = []
-                for n, neuron in enumerate(current_layer.neurons):
-                    sub_m.append(current_layer.layer_weights[n * current_layer.num_neurons])
-                for i in range(current_layer.prev_layer.num_neurons):
+                # sub_m = []
+                # for n, neuron in enumerate(current_layer.neurons):
+                #     sub_m.append(current_layer.layer_weights[n * current_layer.num_neurons])
+                # for i in range(current_layer.prev_layer.num_neurons):
+                #     m.append(sub_m)
+
+                #below is an edit of the new stuff - configseems right but haven't checked the actual numbers
+                for n, neuron in enumerate(self.layers[l+1].neurons):
+                    sub_m = []
+                    for j in range(self.layers[l+1].prev_layer.num_neurons):
+                        if j == n:
+                            sub_m.append(self.layers[l+1].layer_weights[n * self.layers[l+1].num_neurons])
+                        else:
+                            sub_m.append(0)
                     m.append(sub_m)
                 path.append(m)
         
