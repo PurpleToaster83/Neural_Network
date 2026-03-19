@@ -288,19 +288,24 @@ class Network():
             self.layers[-1].createInputNeurons()
         self.layers[-1].setLayerOutputs()
 
-    def cumulative_partial(self, w, layer_num):
+    def cumulative_partial(self, w, b, layer_num):
         layer = self.layers[layer_num]
 
+        if(w):
         # dNet_dWeight
-        if layer_num == 0:
-            dInit = self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)]
+            if layer_num == 0:
+                dInit = self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)]
+            else:
+                dInit = layer.prev_layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut()
+            
+            #dOut_dWeight
+            out = layer.neurons[int((w + 1 % len(layer.layer_weights)) / layer.num_neurons)].getOut()
+            dInit *= out * (1 - out)
         else:
-            dInit = layer.prev_layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut()
-        
-        #dOut_dWeight
-        out = layer.neurons[int((w + 1 % len(layer.layer_weights)) / layer.num_neurons)].getOut()
-        dInit *= out * (1 - out)
-          
+            idx = layer.biases.indexOf(b)
+            dInit = layer.neurons[idx].getNet() - layer.biases[idx]
+            dInit *= layer.neurons[idx].getOut() * (1 - layer.neurons[idx].getOut())
+
         path = []
         
         m = []
@@ -331,7 +336,7 @@ class Network():
                 # for i in range(current_layer.prev_layer.num_neurons):
                 #     m.append(sub_m)
 
-                #below is an edit of the new stuff - configseems right but haven't checked the actual numbers
+                #below is an edit of the new stuff - config seems right but haven't checked the actual numbers
                 for n, neuron in enumerate(self.layers[l+1].neurons):
                     sub_m = []
                     for j in range(self.layers[l+1].prev_layer.num_neurons):
@@ -353,8 +358,6 @@ class Network():
             for sub in element:
                 print(f'\t{sub}')
 
-
-
         starter = []
         for e in path[0]:
             starter.append(e * dInit)
@@ -369,6 +372,8 @@ class Network():
         return total
     
     #TODO: do cumulative partial for biases also
+    # at the ∂net_∂wn do ∂net_∂bias instead - shouldn't be hard
+    # should add b parameter to function that determines if partial for weight or bias
     
     def updateAllWeights(self):
         #TODO
@@ -449,8 +454,8 @@ def main():
     network.addLayer(len(target_output))
 
     network.labelWeights()
-    print(f'dTotalError_dW0: {network.cumulative_partial(0, 0)}')
-    print(f'dTotalError_dW1: {network.cumulative_partial(1, 0)}')
+    print(f'dTotalError_dW0: {network.cumulative_partial(0, 0, 0)}')
+    print(f'dTotalError_dW1: {network.cumulative_partial(1, 0, 0)}')
     # print(f'dTotalError_dW5: {network.cumulative_partial(4, 1)} (Check)')
     # print(f'dTotalError_dW10: {network.cumulative_partial(8, 2)} (Check)')
     
