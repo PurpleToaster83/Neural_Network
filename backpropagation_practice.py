@@ -288,10 +288,10 @@ class Network():
             self.layers[-1].createInputNeurons()
         self.layers[-1].setLayerOutputs()
 
-    def cumulative_partial(self, w, b, layer_num):
+    def cumulative_partial(self, layer_num, w=None, b=None):
         layer = self.layers[layer_num]
 
-        if(w):
+        if(w != None):
         # dNet_dWeight
             if layer_num == 0:
                 dInit = self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)]
@@ -299,26 +299,24 @@ class Network():
                 dInit = layer.prev_layer.neurons[int((w % len(layer.layer_weights)) / layer.num_neurons)].getOut()
             
             #dOut_dWeight
-            out = layer.neurons[int((w + 1 % len(layer.layer_weights)) / layer.num_neurons)].getOut()
+            out = layer.neurons[int(((w + 1) % len(layer.layer_weights)) / layer.num_neurons)].getOut()
             dInit *= out * (1 - out)
         else:
-            idx = layer.biases.indexOf(b)
-            dInit = layer.neurons[idx].getNet() - layer.biases[idx]
-            dInit *= layer.neurons[idx].getOut() * (1 - layer.neurons[idx].getOut())
+            dInit = layer.neurons[b].getOut() * (1 - layer.neurons[b].getOut())
 
         path = []
         
-        m = []
-        for n, neuron in enumerate(self.layers[layer_num+1].neurons):
-            m.append(self.layers[layer_num+1].layer_weights[n * self.layers[layer_num+1].num_neurons]) #netH0_outI0 dependant on connector weight
-            #TODO: this is wrong should index (0, 1) and (2, 3) for weights to start
-        path.append(m)
+        if(layer != self.layers[-1]): 
+            m = []
+            for n, neuron in enumerate(self.layers[layer_num+1].neurons):
+                m.append(self.layers[layer_num + 1].layer_weights[n + ((w if w is not None else b) * self.layers[layer_num].num_neurons)]) #netH0_outI0 dependant on connector weight
+            path.append(m)
 
-        for l in range(1, len(self.layers)):
+        for l in range(layer_num + 1, len(self.layers)):
             current_layer = self.layers[l]
             m = []
 
-            for n, neuron in enumerate(current_layer.neurons): #this is wrong should be indexing all weights within matrice
+            for n, neuron in enumerate(current_layer.neurons):
                 sub_m = []
                 for j in range(current_layer.prev_layer.num_neurons):
                     if j == n:
@@ -328,55 +326,48 @@ class Network():
                 m.append(sub_m)
             path.append(m)
 
-            if current_layer != self.layers[-1]: #TODO: matrice created below is not correct (make it a diagnol matrix instead, so look at what do above)
+            if current_layer != self.layers[-1]:
                 m = []
-                # sub_m = []
-                # for n, neuron in enumerate(current_layer.neurons):
-                #     sub_m.append(current_layer.layer_weights[n * current_layer.num_neurons])
-                # for i in range(current_layer.prev_layer.num_neurons):
-                #     m.append(sub_m)
-
-                #below is an edit of the new stuff - config seems right but haven't checked the actual numbers
-                for n, neuron in enumerate(self.layers[l+1].neurons):
+                for n in range(current_layer.num_neurons):
                     sub_m = []
-                    for j in range(self.layers[l+1].prev_layer.num_neurons):
-                        if j == n:
-                            sub_m.append(self.layers[l+1].layer_weights[n * self.layers[l+1].num_neurons])
-                        else:
-                            sub_m.append(0)
+                    for pn in range(self.layers[l+1].num_neurons):
+                        sub_m.append(self.layers[l+1].layer_weights[pn + (n * (current_layer.num_neurons))])
                     m.append(sub_m)
                 path.append(m)
+            else:
+                break
         
-        m = []
-        for n, neuron in enumerate(self.layers[-1].neurons):
-            #∂En_∂Outn * ∂Outn_∂Netn
-            m.append([(-1 * (self.target_output[n] - neuron.getOut()))])
-        path.append(m)
+        if(layer != self.layers[-1]):
+            m = []
+            for n, neuron in enumerate(self.layers[-1].neurons):
+                #∂En_∂Outn * ∂Outn_∂Netn
+                m.append([(-1 * (self.target_output[n] - neuron.getOut()))])
+            path.append(m)
+        else:
+            idx = w % self.layers[-1].num_neurons
+            resid = (-1 * (self.target_output[idx] - self.layers[-1].neurons[idx].getOut()))
+            path.append(self.layers[-1].neurons[idx].getOut() * (1- self.layers[-1].neurons[idx].getOut()))
+            path.append(resid)
 
-        for e, element in enumerate(path):
-            print(e)
-            for sub in element:
-                print(f'\t{sub}')
+        if(layer != self.layers[-1]):
+            starter = []
+            for e in path[0]:
+                starter.append(e * dInit)
 
-        starter = []
-        for e in path[0]:
-            starter.append(e * dInit)
-
-        running = starter
-        for element in range(len(path) - 2):
-            running = self.matrix_mult(running, path[element + 1])
+            running = starter
+            for element in range(len(path) - 2):
+                running = self.matrix_mult(running, path[element + 1])
+            
+            total = 0
+            for r, run in enumerate(running):
+                total += (run * path[-1][r][0])
+        else:
+            total = dInit * path[0] * path[-1]
         
-        total = 0
-        for r, run in enumerate(running):
-            total += (run * path[-1][r][0])
         return total
     
-    #TODO: do cumulative partial for biases also
-    # at the ∂net_∂wn do ∂net_∂bias instead - shouldn't be hard
-    # should add b parameter to function that determines if partial for weight or bias
-    
-    def updateAllWeights(self):
-        #TODO
+    def updateAll(self):
+        #TODO: have update all weights and biases
         pass
 
     def labelWeights(self):
@@ -394,7 +385,7 @@ class Network():
             sum += (1 / len(self.target_output)) * pow((self.target_output[i] - self.layers[-1].neurons[i].getOut()), 2)
             return sum
 
-    def matrix_mult(self, matrix_a, matrix_b):
+    def matrix_mult(self, matrix_a, matrix_b): #TODO: use straussen algorithm instead to make faster, make the architecture set up with matrices
         is_array = False
         matrix_r = [[0 for i in range(len(matrix_a))] for j in range(len(matrix_b[0]))]
 
@@ -454,13 +445,16 @@ def main():
     network.addLayer(len(target_output))
 
     network.labelWeights()
-    print(f'dTotalError_dW0: {network.cumulative_partial(0, 0, 0)}')
-    print(f'dTotalError_dW1: {network.cumulative_partial(1, 0, 0)}')
-    # print(f'dTotalError_dW5: {network.cumulative_partial(4, 1)} (Check)')
-    # print(f'dTotalError_dW10: {network.cumulative_partial(8, 2)} (Check)')
+
+    #number for weight is local between layers
+    print(f'dTotalError_dW0: {network.cumulative_partial(0, w=0)}') #good
+    print(f'dTotalError_dW1: {network.cumulative_partial(0, w=1)}') #good
+    print(f'dTotalError_dW4: {network.cumulative_partial(1, w=0)}') #good
+    print(f'dTotalError_dW8: {network.cumulative_partial(2, w=0)}') #good
+    print(f'dTotalError_dB0: {network.cumulative_partial(0, b=0)}') #good
     
-    # network.updateAllWeights()
-    network.printInfo(dispPart = False)
+    network.updateAll()
+    network.printInfo()
     
     network_weights = []
     network_biases = []
@@ -469,8 +463,7 @@ def main():
             network_weights.append(network.network_weights[i][j])
         for k in range(2):
             network_biases.append(network.network_biases[i][k])
-    print(f'Propogation Results (W0):', propogate(learning_rate, sys_input, target_output, network_weights, network_biases)) #TODO: If do this check that the way think about weights in propogation consitant with the network
-    print('blah')
+    # print(f'Propogation Results (W0):', propogate(learning_rate, sys_input, target_output, network_weights, network_biases)) #TODO: If do this check that the way think about weights in propogation consitant with the network
 
 if __name__ == "__main__":
     main()
