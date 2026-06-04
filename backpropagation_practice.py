@@ -12,16 +12,16 @@ def propogation(learning_rate, sys_input, desired_output, weights, biases):
 
     #non-specific function to calculate the net and output signal of neurons
     def results(weight_values):
-        netH1 = sys_input[0] * weight_values[0] + sys_input[1] * weight_values[1] + biases[0]
+        netH1 = sys_input[0] * weight_values[0] + sys_input[1] * weight_values[2] + biases[0]
         outH1 = logistic_funct.subs({net: -netH1})
 
-        netH2 = sys_input[0] * weight_values[2] + sys_input[1] * weight_values[3] + biases[1]
+        netH2 = sys_input[0] * weight_values[1] + sys_input[1] * weight_values[3] + biases[1]
         outH2 = logistic_funct.subs({net: -netH2})
 
-        netO1 = outH1 * weight_values[4] + outH2 * weight_values[5] + biases[2]
+        netO1 = outH1 * weight_values[4] + outH2 * weight_values[6] + biases[2]
         outO1 = logistic_funct.subs({net: -netO1})
 
-        netO2 = (outH1 * weight_values[6]) + (outH2 * weight_values[7]) + biases[3]
+        netO2 = (outH1 * weight_values[5]) + (outH2 * weight_values[7]) + biases[3]
         outO2 = logistic_funct.subs({net: -netO2})
 
         return [netH1, outH1, netH2, outH2, netO1, outO1, netO2, outO2]
@@ -50,8 +50,8 @@ def propogation(learning_rate, sys_input, desired_output, weights, biases):
         dOutH2_dNetH2 = result[3] * (1 - result[3])
         #Net with respect to previous out
         dNetO1_dOutH1 = weights[4]
-        dNetO2_dOutH1 = weights[6]
-        dNetO1_dOutH2 = weights[5]
+        dNetO2_dOutH1 = weights[5]
+        dNetO1_dOutH2 = weights[6]
         dNetO2_dOutH2 = weights[7]
         #net with respect to weight
         dNetH_dW1_3 = sys_input[0]
@@ -97,70 +97,6 @@ def propogation(learning_rate, sys_input, desired_output, weights, biases):
     print(f'New Error: {calc_error(results(weights))}')
     print(f'New Weights: {weights}')
     print(f'New Biases: {biases}')
-
-# test function similar to propogation that just does it once
-def propogate(learning_rate, sys_input, desired_output, weights, biases):
-    net = symbols('net')
-    logistic_funct = 1 / (1 + pow(math.e, net))
-
-    #weights = np.random.rand(8)
-    #biases = np.random.rand(4)
-    loop_continue = True
-
-    #non-specific function to calculate the net and output signal of neurons
-    def results(weight_values):
-        netH1 = sys_input[0] * weight_values[0] + sys_input[1] * weight_values[1] + biases[0]
-        outH1 = logistic_funct.subs({net: -netH1})
-
-        netH2 = sys_input[0] * weight_values[2] + sys_input[1] * weight_values[3] + biases[1]
-        outH2 = logistic_funct.subs({net: -netH2})
-
-        netO1 = outH1 * weight_values[4] + outH2 * weight_values[5] + biases[2]
-        outO1 = logistic_funct.subs({net: -netO1})
-
-        netO2 = (outH1 * weight_values[6]) + (outH2 * weight_values[7]) + biases[3]
-        outO2 = logistic_funct.subs({net: -netO2})
-
-        return [netH1, outH1, netH2, outH2, netO1, outO1, netO2, outO2]
-
-    result = results(weights)
-
-    #Errors with respect to out
-    dErrorO1_dOutO1 = -1 * (desired_output[0] - result[5])
-    dErrorO2_dOutO2 = -1 * (desired_output[1] - result[7])
-    #Out with respect to net
-    dOutO1_dNetO1 = result[5] * (1 - result[5])
-    dOutO2_dNetO2 = result[7] * (1 - result[7])
-    dOutH1_dNetH1 = result[1] * (1 - result[1])
-    dOutH2_dNetH2 = result[3] * (1 - result[3])
-    #Net with respect to previous out
-    dNetO1_dOutH1 = weights[4]
-    dNetO2_dOutH1 = weights[6]
-    dNetO1_dOutH2 = weights[5]
-    dNetO2_dOutH2 = weights[7]
-    #net with respect to weight
-    dNetH_dW1_3 = sys_input[0]
-    dNetH_dW2_4 = sys_input[1]
-    dNetO_dW5_7 = result[1]
-    dNetO_dW6_8 = result[3]
-
-    #biases recalculations
-    dErrorTotal_dB1 = dErrorO1_dOutO1 * dOutO1_dNetO1 * dNetO1_dOutH1 * dOutH1_dNetH1
-    dErrorTotal_dB2 = dErrorO2_dOutO2 * dOutO2_dNetO2 * dNetO2_dOutH2 * dOutH2_dNetH2
-    dErrorTotal_dB3 = dErrorO1_dOutO1 * dOutO1_dNetO1
-    dErrorTotal_dB4 = dErrorO2_dOutO2 * dOutO2_dNetO2
-
-    #weights recalculations
-    dErrorTotal_dW1 = ((dErrorO1_dOutO1 * dOutO1_dNetO1 * dNetO1_dOutH1) + (dErrorO2_dOutO2 * dOutO2_dNetO2 * dNetO2_dOutH1)) * dOutH1_dNetH1 * dNetH_dW1_3
-    # dErrorTotal_dW2 = ((dErrorO1_dOutO1 * dOutO1_dNetO1 * dNetO1_dOutH1) + (dErrorO2_dOutO2 * dOutO2_dNetO2 * dNetO2_dOutH1)) * dOutH1_dNetH1 * dNetH_dW2_4
-    # dErrorTotal_dW3 = ((dErrorO1_dOutO1 * dOutO1_dNetO1 * dNetO1_dOutH2) + (dErrorO2_dOutO2 * dOutO2_dNetO2 * dNetO2_dOutH2)) * dOutH2_dNetH2 * dNetH_dW1_3
-    # dErrorTotal_dW4 = ((dErrorO1_dOutO1 * dOutO1_dNetO1 * dNetO1_dOutH2) + (dErrorO2_dOutO2 * dOutO2_dNetO2 * dNetO2_dOutH2)) * dOutH2_dNetH2 * dNetH_dW2_4
-    # dErrorTotal_dW5 = dErrorO1_dOutO1 * dOutO1_dNetO1 * dNetO_dW5_7
-    # dErrorTotal_dW6 = dErrorO1_dOutO1 * dOutO1_dNetO1 * dNetO_dW6_8
-    # dErrorTotal_dW7 = dErrorO2_dOutO2 * dOutO2_dNetO2 * dNetO_dW5_7
-    # dErrorTotal_dW8 = dErrorO2_dOutO2 * dOutO2_dNetO2 * dNetO_dW6_8
-    
-    return(dErrorTotal_dW1)
 
 class Neuron():
     def __init__(self, inputs, bias, incoming_unweighted, affects):
@@ -248,13 +184,20 @@ class Layer():
             self.neurons[o].updateOut()
             self.outputs.append(self.neurons[o].getOut())
     
-    def getNumNeurons(self):
-        return self.num_neurons
+    def insert(self, key):
+        #TODO
+        pass
+
+    def pop(self, n):
+        #TODO
+        pass
+
 
 class Network():
-    def __init__(self, sys_inputs, target_output, learning_rate):
+    def __init__(self, sys_inputs, target_output, learning_rate, error_threshold):
         self.sys_inputs = sys_inputs
         self.target_output = target_output
+        self.error_threshold = error_threshold
         self.network_weights = []
         self.network_biases = []
         self.layers = []
@@ -262,21 +205,25 @@ class Network():
         self.weight_dict = {}
         self.num_layers = len(self.layers)
 
+    def truncate(self, number, decimals):
+        factor = pow(10, decimals)
+        return int(number * factor) / factor
+
     def addLayer(self, num_neurons, layer_type = 'hidden'):
         new_weights = []
 
         if layer_type == 'input':
             prev_layer_neurons = len(self.sys_inputs)
         else:
-            prev_layer_neurons = self.layers[-1].getNumNeurons()
+            prev_layer_neurons = self.layers[-1].num_neurons
 
         for w in range((num_neurons * prev_layer_neurons)):  
-            new_weights.append((np.random.rand() + 0.01) * (np.random.randint(5) + 0.01)) #TODO: reimplement later, also don't use np
+            new_weights.append(self.truncate((np.random.rand() + 0.01) * (np.random.randint(5) + 0.01), 3)) #TODO: reimplement later, also don't use np
         self.network_weights.append(new_weights)
 
         new_biases = []
         for b in range(num_neurons):
-            new_biases.append(np.random.rand() * np.random.randint(10)) #TODO: reimplement later, also don't use np
+            new_biases.append(self.truncate(np.random.rand() * np.random.randint(10), 3)) #TODO: reimplement later, also don't use np
 
         self.network_biases.append(new_biases)
 
@@ -302,14 +249,15 @@ class Network():
             out = layer.neurons[int(((w + 1) % len(layer.layer_weights)) / layer.num_neurons)].getOut()
             dInit *= out * (1 - out)
         else:
-            dInit = layer.neurons[b].getOut() * (1 - layer.neurons[b].getOut())
+            dInit = layer.biases[b]
+            dInit *= layer.neurons[b].getOut() * (1 - layer.neurons[b].getOut())
 
         path = []
         
         if(layer != self.layers[-1]): 
             m = []
             for n, neuron in enumerate(self.layers[layer_num+1].neurons):
-                m.append(self.layers[layer_num + 1].layer_weights[n + ((w if w is not None else b) * self.layers[layer_num].num_neurons)]) #netH0_outI0 dependant on connector weight
+                m.append(self.layers[layer_num + 1].layer_weights[n + (((w if w is not None else b) % self.layers[layer_num].num_neurons) * self.layers[layer_num].num_neurons)]) #netH0_outI0 dependant on connector weight
             path.append(m)
 
         for l in range(layer_num + 1, len(self.layers)):
@@ -326,12 +274,13 @@ class Network():
                 m.append(sub_m)
             path.append(m)
 
+            #TODO: this is wrong
             if current_layer != self.layers[-1]:
                 m = []
                 for n in range(current_layer.num_neurons):
                     sub_m = []
                     for pn in range(self.layers[l+1].num_neurons):
-                        sub_m.append(self.layers[l+1].layer_weights[pn + (n * (current_layer.num_neurons))])
+                        sub_m.append(self.layers[l+1].layer_weights[n + ((pn % self.layers[l+1].num_neurons) * current_layer.num_neurons)])
                     m.append(sub_m)
                 path.append(m)
             else:
@@ -343,8 +292,8 @@ class Network():
                 #∂En_∂Outn * ∂Outn_∂Netn
                 m.append([(-1 * (self.target_output[n] - neuron.getOut()))])
             path.append(m)
-        else:
-            idx = w % self.layers[-1].num_neurons
+        else: #TODO: what is this for?
+            idx = (w if w is not None else b) % self.layers[-1].num_neurons
             resid = (-1 * (self.target_output[idx] - self.layers[-1].neurons[idx].getOut()))
             path.append(self.layers[-1].neurons[idx].getOut() * (1- self.layers[-1].neurons[idx].getOut()))
             path.append(resid)
@@ -367,8 +316,38 @@ class Network():
         return total
     
     def updateAll(self):
-        #TODO: have update all weights and biases
-        pass
+        new_network_weights = []
+        new_network_biases = []
+        for l, layer in enumerate(self.layers):
+            new_layer_weights = []
+            for w, weight in enumerate(layer.layer_weights):
+                new_layer_weights.append(weight - self.learning_rate * self.cumulative_partial(l, w=w))
+            
+            new_layer_biases = []
+            for b, bias in enumerate(layer.biases):
+                new_layer_biases.append(bias - self.learning_rate * self.cumulative_partial(l, b=b))
+            
+            new_network_weights.append(new_layer_weights)
+            new_network_biases.append(new_layer_biases)
+
+        self.network_weights = new_network_weights
+        self.network_biases = new_network_biases
+        for l, layer in enumerate(self.layers):
+            layer.layer_weights = self.network_weights[l]
+            layer.biases = self.network_biases[l]
+
+            #TODO: figure out how to update weights on neuron level
+            # need to just call simple functions to reset in neuron - should intenrlly call update out and net
+            for neuron in layer.neurons:
+                neuron.updateNet()
+                neuron.updateOut()
+
+    def minimizeError(self):
+        #TODO: error not updating, make sure partials seem good
+        current_error = self.getError()
+        while(current_error >= self.error_threshold):
+            self.updateAll()
+            current_error = self.getError()
 
     def labelWeights(self):
         wCount = 0
@@ -434,27 +413,22 @@ def main():
     learning_rate = 0.5
     sys_input = [0.05, 0.10]
     target_output = [0.01, 0.99]
-    propagation_weights = [0.15, 0.20, 0.25, 0.30, 0.40, 0.45, 0.50, 0.55]
-    propagation_biases = [0.35, 0.35, 0.60, 0.60]
-    weight_seek = 0
+    error_threshold = 0.001
 
     # create a network and instatiate the weights, biases, and neurons
-    network = Network(sys_input, target_output, learning_rate)
+    network = Network(sys_input, target_output, learning_rate, error_threshold)
     network.addLayer(2, layer_type='input')
-    network.addLayer(2)
+    # network.addLayer(2)
     network.addLayer(len(target_output))
 
     network.labelWeights()
 
     #number for weight is local between layers
     print(f'dTotalError_dW0: {network.cumulative_partial(0, w=0)}') #good
-    print(f'dTotalError_dW1: {network.cumulative_partial(0, w=1)}') #good
-    print(f'dTotalError_dW4: {network.cumulative_partial(1, w=0)}') #good
-    print(f'dTotalError_dW8: {network.cumulative_partial(2, w=0)}') #good
-    print(f'dTotalError_dB0: {network.cumulative_partial(0, b=0)}') #good
-    
-    network.updateAll()
-    network.printInfo()
+    # print(f'dTotalError_dW1: {network.cumulative_partial(0, w=1)}') #good
+    # print(f'dTotalError_dW4: {network.cumulative_partial(1, w=0)}') #good
+    # print(f'dTotalError_dW8: {network.cumulative_partial(2, w=0)}') #good
+    # print(f'dTotalError_dB0: {network.cumulative_partial(0, b=0)}') #good
     
     network_weights = []
     network_biases = []
@@ -463,7 +437,10 @@ def main():
             network_weights.append(network.network_weights[i][j])
         for k in range(2):
             network_biases.append(network.network_biases[i][k])
-    # print(f'Propogation Results (W0):', propogate(learning_rate, sys_input, target_output, network_weights, network_biases)) #TODO: If do this check that the way think about weights in propogation consitant with the network
+    propogation(learning_rate, sys_input, target_output, network_weights, network_biases)
+
+    network.minimizeError()
+    network.printInfo()
 
 if __name__ == "__main__":
     main()
