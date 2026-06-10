@@ -108,6 +108,12 @@ class Neuron():
         self.net = 0
         self.out = 0
 
+        #TODO: need to figure out wah is being passed in and what is assigned to what
+
+    def weight_inputs(self):
+        #TODO: want the weighting of inputs to happen in neurons not layers
+        pass
+
     def updateNet(self):
         net = 0
         for i in range(self.length):
@@ -179,11 +185,18 @@ class Layer():
             self.neurons.append(Neuron(active_neuron_weights, self.biases[z], self.prev_layer, original_weights))
 
     def setLayerOutputs(self):
+        new_outputs = []
         for o in range(self.num_neurons):
             self.neurons[o].updateNet()
             self.neurons[o].updateOut()
-            self.outputs.append(self.neurons[o].getOut())
-    
+            new_outputs.append(self.neurons[o].getOut())
+        self.outputs = new_outputs
+
+    def updateNeuronWeights(self):
+        for n in range(self.num_neurons):
+            blah = 0
+        self.setLayerOutputs()
+
     def insert(self, key):
         #TODO
         pass
@@ -191,7 +204,6 @@ class Layer():
     def pop(self, n):
         #TODO
         pass
-
 
 class Network():
     def __init__(self, sys_inputs, target_output, learning_rate, error_threshold):
@@ -332,18 +344,18 @@ class Network():
 
         self.network_weights = new_network_weights
         self.network_biases = new_network_biases
+
+        # distribute weights to appropriate layer
         for l, layer in enumerate(self.layers):
             layer.layer_weights = self.network_weights[l]
             layer.biases = self.network_biases[l]
 
             #TODO: figure out how to update weights on neuron level
             # need to just call simple functions to reset in neuron - should intenrlly call update out and net
-            for neuron in layer.neurons:
-                neuron.updateNet()
-                neuron.updateOut()
+            layer.updateNeuronWeights()
 
     def minimizeError(self):
-        #TODO: error not updating, make sure partials seem good
+        #TODO: error not updating -> need weights + biases to be updated for neurons
         current_error = self.getError()
         while(current_error >= self.error_threshold):
             self.updateAll()
@@ -424,12 +436,16 @@ def main():
     network.labelWeights()
 
     #number for weight is local between layers
+    #note: this is for 3 layers
     print(f'dTotalError_dW0: {network.cumulative_partial(0, w=0)}') #good
-    # print(f'dTotalError_dW1: {network.cumulative_partial(0, w=1)}') #good
-    # print(f'dTotalError_dW4: {network.cumulative_partial(1, w=0)}') #good
+    print(f'dTotalError_dW1: {network.cumulative_partial(0, w=1)}') #good
+    print(f'dTotalError_dW4: {network.cumulative_partial(1, w=0)}') #good
     # print(f'dTotalError_dW8: {network.cumulative_partial(2, w=0)}') #good
     # print(f'dTotalError_dB0: {network.cumulative_partial(0, b=0)}') #good
-    
+
+    network.minimizeError()
+    network.printInfo()
+
     network_weights = []
     network_biases = []
     for i in range(2):
@@ -439,8 +455,7 @@ def main():
             network_biases.append(network.network_biases[i][k])
     propogation(learning_rate, sys_input, target_output, network_weights, network_biases)
 
-    network.minimizeError()
-    network.printInfo()
+    print('blah')
 
 if __name__ == "__main__":
     main()
