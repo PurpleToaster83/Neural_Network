@@ -99,25 +99,19 @@ def propogation(learning_rate, sys_input, desired_output, weights, biases):
     print(f'New Biases: {biases}')
 
 class Neuron():
-    def __init__(self, inputs, bias, incoming_unweighted, affects):
-        self.inputs = inputs
+    def __init__(self, weights, prev_outputs, bias):
+        self.weights = weights
         self.bias = bias
-        self.incoming_unweighted = incoming_unweighted
-        self.affects = affects
-        self.length = len(self.inputs)
+        self.prev_outputs = prev_outputs
         self.net = 0
         self.out = 0
 
-        #TODO: need to figure out wah is being passed in and what is assigned to what
-
-    def weight_inputs(self):
-        #TODO: want the weighting of inputs to happen in neurons not layers
-        pass
+        #TODO: need to figure out what is being passed in and what is assigned to what
 
     def updateNet(self):
         net = 0
-        for i in range(self.length):
-            net += self.inputs[i]
+        for i in range(len(self.weights)):
+            net += self.weights[i] * self.prev_outputs[i]
         net += self.bias
         self.net = net
 
@@ -146,43 +140,32 @@ class Layer():
         self.outputs = []
         self.layer_type = layer_type
 
-    def weight_inputs(self):
-        neuron_inputs = []
-        if(self.layer_type == 'input'):
-            for active in range(len(self.prev_layer) * self.num_neurons): #Think about using len(self.layer_weights)
-                neuron_inputs.append(self.prev_layer[int(active / self.num_neurons)] * self.layer_weights[active])
-        else:
-            for active in range(self.prev_layer.num_neurons * self.num_neurons):
-                neuron_inputs.append(self.prev_layer.outputs[int(active / self.num_neurons)] * self.layer_weights[active])
-        return neuron_inputs
-
     def createNeurons(self):
-        weights = self.weight_inputs()
+        weights = []
+        for active in range(self.prev_layer.num_neurons * self.num_neurons):
+            weights.append(self.layer_weights[active])
+
         for z in range(self.num_neurons):
             active_neuron_weights = []
             inputs = []
-            weight_history = []
 
             for i in self.prev_layer.neurons:
                 inputs.append(i.getOut())
             for k in range(0, len(weights), int(len(weights) / self.prev_layer.num_neurons)):
                 active_neuron_weights.append(weights[k + z])
-                weight_history.append(self.layer_weights[k + z])
-            for neuron in self.prev_layer.neurons:
-                for element in neuron.affects:
-                    weight_history.append(element)
-            self.neurons.append(Neuron(active_neuron_weights, self.biases[z], inputs, weight_history))
+            self.neurons.append(Neuron(active_neuron_weights, inputs, self.biases[z]))
 
     def createInputNeurons(self):
-        weights = self.weight_inputs()
+        weights = []
+        for active in range(len(self.prev_layer) * self.num_neurons):
+            weights.append(self.layer_weights[active])
+
         for z in range(self.num_neurons):
             active_neuron_weights = []
-            original_weights = []
 
             for k in range(0, len(weights), int(len(weights) / len(self.prev_layer))):
                 active_neuron_weights.append(weights[k + z])
-                original_weights.append(self.layer_weights[k + z])
-            self.neurons.append(Neuron(active_neuron_weights, self.biases[z], self.prev_layer, original_weights))
+            self.neurons.append(Neuron(active_neuron_weights, self.prev_layer, self.biases[z]))
 
     def setLayerOutputs(self):
         new_outputs = []
@@ -193,8 +176,18 @@ class Layer():
         self.outputs = new_outputs
 
     def updateNeuronWeights(self):
-        for n in range(self.num_neurons):
-            blah = 0
+        if(self.layer_type == 'input'):
+            for n, neuron in enumerate(self.neurons):
+                update_weights = []
+                for k in range(0, len(self.layer_weights), int(len(self.layer_weights) / len(self.prev_layer))):
+                    update_weights.append(self.layer_weights[k + n])
+                neuron.weights = update_weights
+        else:
+            for n, neuron in enumerate(self.neurons):
+                update_weights = []
+                for k in range(0, len(self.layer_weights), int(len(self.layer_weights) / self.prev_layer.num_neurons)):
+                    update_weights.append(self.layer_weights[k + n])
+                neuron.weights = update_weights
         self.setLayerOutputs()
 
     def insert(self, key):
@@ -349,13 +342,9 @@ class Network():
         for l, layer in enumerate(self.layers):
             layer.layer_weights = self.network_weights[l]
             layer.biases = self.network_biases[l]
-
-            #TODO: figure out how to update weights on neuron level
-            # need to just call simple functions to reset in neuron - should intenrlly call update out and net
             layer.updateNeuronWeights()
 
     def minimizeError(self):
-        #TODO: error not updating -> need weights + biases to be updated for neurons
         current_error = self.getError()
         while(current_error >= self.error_threshold):
             self.updateAll()
@@ -422,40 +411,43 @@ class Network():
             print()
 
 def main():
-    learning_rate = 0.5
+    learning_rate = 1
     sys_input = [0.05, 0.10]
     target_output = [0.01, 0.99]
-    error_threshold = 0.001
+    error_threshold = 0.00001
 
     # create a network and instatiate the weights, biases, and neurons
     network = Network(sys_input, target_output, learning_rate, error_threshold)
     network.addLayer(2, layer_type='input')
-    # network.addLayer(2)
+    network.addLayer(2)
     network.addLayer(len(target_output))
 
     network.labelWeights()
 
     #number for weight is local between layers
     #note: this is for 3 layers
-    print(f'dTotalError_dW0: {network.cumulative_partial(0, w=0)}') #good
-    print(f'dTotalError_dW1: {network.cumulative_partial(0, w=1)}') #good
-    print(f'dTotalError_dW4: {network.cumulative_partial(1, w=0)}') #good
+    # print(f'dTotalError_dW0: {network.cumulative_partial(0, w=0)}') #good
+    # print(f'dTotalError_dW1: {network.cumulative_partial(0, w=1)}') #good
+    # print(f'dTotalError_dW4: {network.cumulative_partial(1, w=0)}') #good
     # print(f'dTotalError_dW8: {network.cumulative_partial(2, w=0)}') #good
     # print(f'dTotalError_dB0: {network.cumulative_partial(0, b=0)}') #good
 
+    print(f'Original Error: {network.getError()}')
     network.minimizeError()
+    print(f'Updated Error: {network.getError()}')
     network.printInfo()
 
-    network_weights = []
-    network_biases = []
-    for i in range(2):
-        for j in range(4):
-            network_weights.append(network.network_weights[i][j])
-        for k in range(2):
-            network_biases.append(network.network_biases[i][k])
-    propogation(learning_rate, sys_input, target_output, network_weights, network_biases)
+    # network_weights = []
+    # network_biases = []
+    # for i in range(2):
+    #     for j in range(4):
+    #         network_weights.append(network.network_weights[i][j])
+    #     for k in range(2):
+    #         network_biases.append(network.network_biases[i][k])
+    # propogation(learning_rate, sys_input, target_output, network_weights, network_biases)
 
-    print('blah')
+    print('finished')
+
 
 if __name__ == "__main__":
     main()
