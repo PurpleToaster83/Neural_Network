@@ -187,8 +187,6 @@ class Network():
         self.network_biases = []
         self.layers = []
         self.learning_rate = learning_rate
-        self.weight_dict = {}
-        self.num_layers = len(self.layers)
 
     def truncate(self, number, decimals):
         factor = pow(10, decimals)
@@ -209,7 +207,6 @@ class Network():
         new_biases = []
         for b in range(num_neurons):
             new_biases.append(self.truncate(np.random.rand() * np.random.randint(10), 3)) #TODO: reimplement later, also don't use np
-
         self.network_biases.append(new_biases)
 
         if layer_type == 'input':
@@ -332,15 +329,6 @@ class Network():
             self.updateAll()
             current_error = self.getError()
 
-    def labelWeights(self):
-        wCount = 0
-        print()
-
-        for nLW, netLWeight in enumerate(self.network_weights):
-            for lW, layerWeight in enumerate(netLWeight):
-                self.weight_dict.update({wCount : layerWeight})
-                wCount += 1
-
     def getError(self):
         sum = 0
         for i in range(len(self.target_output)):
@@ -364,34 +352,6 @@ class Network():
 
         return matrix_r
 
-    def printInfo(self, arch=False, in_out=False, labelW=False, dispPart=False, error=False):
-        if arch:
-            print('Architecture')
-            for l, index_l in enumerate(self.layers):
-                print(index_l)
-                for n, index_n in enumerate(index_l.neurons):
-                    print(f'\t{index_n}')
-            print()
-
-        if in_out:
-            print('Neuron Input/Output:')
-            for l, layer in enumerate(self.layers):
-                for n, neuron in enumerate(layer.neurons):
-                    print(f'\tL{l} N{n} Net: {neuron.getNet()}')
-                    print(f'\tL{l} N{n} Out: {neuron.getOut()}')
-                    print(f'\tL{l} N{n} Bias: {neuron.getBias()}')
-            print()
-
-        if labelW:
-            print("Labeled Weights:")
-            for nLW in self.weight_dict:
-                print(f'\tW{nLW} --> {self.weight_dict.get(nLW)}')
-            print()
-
-        if(error):
-            print(f'System Error: {self.getError()}')
-            print()
-
 def main():
     learning_rate = 1
     sys_input = [0.05, 0.10]
@@ -404,12 +364,9 @@ def main():
     network.addLayer(2)
     network.addLayer(len(target_output))
     
-    network.labelWeights()
-
     print(f'Original Error: {network.getError()}')
     network.minimizeError()
     print(f'Updated Error: {network.getError()}')
-    network.printInfo()
 
     print('finished')
 
