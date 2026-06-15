@@ -98,77 +98,44 @@ def propogation(learning_rate, sys_input, desired_output, weights, biases):
     print(f'New Weights: {weights}')
     print(f'New Biases: {biases}')
 
-class Neuron():
-    def __init__(self, weights, prev_outputs, bias):
-        self.weights = weights
-        self.bias = bias
-        self.prev_outputs = prev_outputs
-        self.net = 0
-        self.out = 0
-
-        #TODO: need to figure out what is being passed in and what is assigned to what
-
-    def updateNet(self):
-        net = 0
-        for i in range(len(self.weights)):
-            net += self.weights[i] * self.prev_outputs[i]
-        net += self.bias
-        self.net = net
-
-    def updateOut(self):
-        self.out = 1 / (1 + pow(math.e, -self.net))
-
-    def getNet(self):
-        return self.net
-
-    def getOut(self):
-        return self.out
-
-    def dOut_dNet(self):
-        return self.out * (1 - self.out)
-
-    def getBias(self):
-        return self.bias
-
 class Layer():
     def __init__(self, num_neurons, prev_layer, layer_weights, biases):
         self.num_neurons = num_neurons
         self.prev_layer = prev_layer
         self.layer_weights = layer_weights
         self.biases = biases
-        self.neurons = []
         self.outputs = []
 
-    def createNeurons(self):
-        weights = []
-        for active in range(self.prev_layer.num_neurons * self.num_neurons):
-            weights.append(self.layer_weights[active])
+    def setLayerOuts(self):
+        net = self.matrix_add(self.matrix_mult(self.prev_layer.outputs, self.layer_weights), self.biases)
+        out = []
+        for n in net:
+            o = 1 / (1 + pow(math.e, -n))
+            out.append(o)
+        self.outputs = out
 
-        for z in range(self.num_neurons):
-            active_neuron_weights = []
-            inputs = []
+    def matrix_mult(self, matrix_a, matrix_b): #TODO: use straussen algorithm instead to make faster, make the architecture set up with matrices
+        is_array = False
+        matrix_r = [[0 for i in range(len(matrix_a))] for j in range(len(matrix_b[0]))]
 
-            for i in range(self.prev_layer.num_neurons):
-                inputs.append(self.prev_layer.outputs[i])
-            for k in range(0, len(weights), int(len(weights) / self.prev_layer.num_neurons)):
-                active_neuron_weights.append(weights[k + z])
-            self.neurons.append(Neuron(active_neuron_weights, inputs, self.biases[z]))
+        if type(matrix_a[0]) != list:
+            matrix_a = [matrix_a]
+            is_array = True
+        for i in range(len(matrix_a)):
+            for j in range(len(matrix_b)):
+                for k in range(len(matrix_a[0])):
+                    matrix_r[i][j] += matrix_a[i][k] * matrix_b[k][j]
 
-    def setLayerOutputs(self):
-        new_outputs = []
-        for o in range(self.num_neurons):
-            self.neurons[o].updateNet()
-            self.neurons[o].updateOut()
-            new_outputs.append(self.neurons[o].getOut())
-        self.outputs = new_outputs
+        if is_array:
+            matrix_r = matrix_r[0]
 
-    def updateNeuronWeights(self):
-        for n, neuron in enumerate(self.neurons):
-            update_weights = []
-            for k in range(0, len(self.layer_weights), int(len(self.layer_weights) / self.prev_layer.num_neurons)):
-                update_weights.append(self.layer_weights[k + n])
-            neuron.weights = update_weights
-        self.setLayerOutputs()
+        return matrix_r
+
+    def matrix_add(self, matrix_a, matrix_b):
+        new_matrix = []
+        for e in range(len(matrix_a)):
+            new_matrix.append(matrix_a[e] + matrix_b[e])
+        return new_matrix
 
     def insert(self, key):
         #TODO
@@ -200,8 +167,11 @@ class Network():
         else:
             prev_layer_neurons = self.layers[-1].num_neurons
 
-        for w in range((num_neurons * prev_layer_neurons)):  
-            new_weights.append(self.truncate((np.random.rand() + 0.01) * (np.random.randint(5) + 0.01), 3)) #TODO: reimplement later, also don't use np
+        for r in range(prev_layer_neurons):
+            row = []
+            for w in range(num_neurons):
+                row.append(self.truncate((np.random.rand() + 0.01) * (np.random.randint(5) + 0.01), 3)) #TODO: reimplement later, also don't use np
+            new_weights.append(row)
         self.network_weights.append(new_weights)
 
         new_biases = []
@@ -216,21 +186,21 @@ class Network():
         else:
             self.layers.append(Layer(num_neurons, self.layers[-1], new_weights, new_biases))
 
-        self.layers[-1].createNeurons()
-        self.layers[-1].setLayerOutputs()
+        self.layers[-1].setLayerOuts()
+        # self.layers[-1].setLayerOutputs()
 
-    def cumulative_partial(self, layer_num, w=None, b=None):
+    def cumulative_partial(self, layer_num, w=None, b=None):        
         layer = self.layers[layer_num]
 
         if(w != None):
         # dNet_dWeight
             if layer_num == 0:
-                dInit = self.sys_inputs[int((w % len(layer.layer_weights)) / layer.num_neurons)]
+                dInit = self.sys_inputs[int((w % self.size(layer.layer_weights)) / layer.num_neurons)]
             else:
-                dInit = layer.prev_layer.outputs[int((w % len(layer.layer_weights)) / layer.num_neurons)]
+                dInit = layer.prev_layer.outputs[int((w % self.size(layer.layer_weights)) / layer.num_neurons)]
             
             #dOut_dWeight
-            out = layer.outputs[int(((w + 1) % len(layer.layer_weights)) / layer.num_neurons)]
+            out = layer.outputs[int(((w + 1) % self.size(layer.layer_weights)) / layer.num_neurons)]
             dInit *= out * (1 - out)
         else:
             dInit = layer.biases[b]
@@ -239,44 +209,35 @@ class Network():
         path = []
         
         if(layer != self.layers[-1]): 
-            m = []
-            for n, neuron in enumerate(self.layers[layer_num+1].neurons):
-                m.append(self.layers[layer_num + 1].layer_weights[n + (((w if w is not None else b) % self.layers[layer_num].num_neurons) * self.layers[layer_num].num_neurons)]) #netH0_outI0 dependant on connector weight
-            path.append(m)
+            n = int((w / self.layers[layer_num].num_neurons) if (w is not None) else b)
+            path.append(self.layers[layer_num + 1].layer_weights[n])
 
         for l in range(layer_num + 1, len(self.layers)):
             current_layer = self.layers[l]
             m = []
 
-            for n, neuron in enumerate(current_layer.neurons):
+            for o, out in enumerate(current_layer.outputs):
                 sub_m = []
                 for j in range(current_layer.prev_layer.num_neurons):
-                    if j == n:
-                        sub_m.append(neuron.getOut() * (1 - neuron.getOut()))
+                    if j == o:
+                        sub_m.append(out* (1 - out))
                     else:
                         sub_m.append(0)
                 m.append(sub_m)
             path.append(m)
 
-            #TODO: this is wrong
             if current_layer != self.layers[-1]:
-                m = []
-                for n in range(current_layer.num_neurons):
-                    sub_m = []
-                    for pn in range(self.layers[l+1].num_neurons):
-                        sub_m.append(self.layers[l+1].layer_weights[n + ((pn % self.layers[l+1].num_neurons) * current_layer.num_neurons)])
-                    m.append(sub_m)
-                path.append(m)
+                path.append(self.layers[l+1].layer_weights)
             else:
                 break
         
         if(layer != self.layers[-1]):
             m = []
-            for n, neuron in enumerate(self.layers[-1].neurons):
+            for o, out in enumerate(self.layers[-1].outputs):
                 #∂En_∂Outn * ∂Outn_∂Netn
-                m.append([(-1 * (self.target_output[n] - neuron.getOut()))])
+                m.append([(-1 * (self.target_output[o] - out))])
             path.append(m)
-        else: #TODO: what is this for?
+        else:
             idx = (w if w is not None else b) % self.layers[-1].num_neurons
             resid = (-1 * (self.target_output[idx] - self.layers[-1].outputs[idx]))
             path.append(self.layers[-1].outputs[idx] * (1 - self.layers[-1].outputs[idx]))
@@ -304,9 +265,14 @@ class Network():
         new_network_biases = []
         for l, layer in enumerate(self.layers):
             new_layer_weights = []
-            for w, weight in enumerate(layer.layer_weights):
-                new_layer_weights.append(weight - self.learning_rate * self.cumulative_partial(l, w=w))
-            
+
+            #TODO: this needs to make a matrix for layer_weights
+            for rw, row in enumerate(layer.layer_weights):
+                new_row = []
+                for w, weight in enumerate(row):
+                    new_row.append(weight - self.learning_rate * self.cumulative_partial(l, w=((rw * layer.num_neurons) + w)))
+                new_layer_weights.append(new_row)
+
             new_layer_biases = []
             for b, bias in enumerate(layer.biases):
                 new_layer_biases.append(bias - self.learning_rate * self.cumulative_partial(l, b=b))
@@ -321,7 +287,7 @@ class Network():
         for l, layer in enumerate(self.layers):
             layer.layer_weights = self.network_weights[l]
             layer.biases = self.network_biases[l]
-            layer.updateNeuronWeights()
+            layer.setLayerOuts()
 
     def minimizeError(self):
         current_error = self.getError()
@@ -351,6 +317,9 @@ class Network():
             matrix_r = matrix_r[0]
 
         return matrix_r
+
+    def size(self, matrix):
+        return len(matrix) * len(matrix[0])
 
 def main():
     learning_rate = 1
