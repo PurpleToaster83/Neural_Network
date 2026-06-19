@@ -98,6 +98,34 @@ def propogation(learning_rate, sys_input, desired_output, weights, biases):
     print(f'New Weights: {weights}')
     print(f'New Biases: {biases}')
 
+def matrix_mult(matrix_a, matrix_b): #TODO: use straussen algorithm instead to make faster
+    is_array = False
+    a = len(matrix_a)
+
+    if type(matrix_a[0]) != list:
+        is_array = True
+        a = 1
+        matrix_a = [matrix_a]
+
+    matrix_r = [[0 for i in range(len(matrix_b[0]))] for j in range(a)]
+
+    for i in range(len(matrix_a)):
+        for j in range(len(matrix_b[0])):
+            for k in range(len(matrix_a[0])):
+                matrix_r[i][j] += matrix_a[i][k] * matrix_b[k][j]
+
+    if is_array:
+        matrix_r = matrix_r[0]
+
+    return matrix_r
+
+
+def matrix_add(matrix_a, matrix_b):
+    new_matrix = []
+    for e in range(len(matrix_a)):
+        new_matrix.append(matrix_a[e] + matrix_b[e])
+    return new_matrix
+
 class Layer():
     def __init__(self, num_neurons, prev_layer, layer_weights, biases):
         self.num_neurons = num_neurons
@@ -107,35 +135,12 @@ class Layer():
         self.outputs = []
 
     def setLayerOuts(self):
-        net = self.matrix_add(self.matrix_mult(self.prev_layer.outputs, self.layer_weights), self.biases)
+        net = matrix_add(matrix_mult(self.prev_layer.outputs, self.layer_weights), self.biases)
         out = []
         for n in net:
             o = 1 / (1 + pow(math.e, -n))
             out.append(o)
         self.outputs = out
-
-    def matrix_mult(self, matrix_a, matrix_b): #TODO: use straussen algorithm instead to make faster, make the architecture set up with matrices
-        is_array = False
-        matrix_r = [[0 for i in range(len(matrix_a))] for j in range(len(matrix_b[0]))]
-
-        if type(matrix_a[0]) != list:
-            matrix_a = [matrix_a]
-            is_array = True
-        for i in range(len(matrix_a)):
-            for j in range(len(matrix_b)):
-                for k in range(len(matrix_a[0])):
-                    matrix_r[i][j] += matrix_a[i][k] * matrix_b[k][j]
-
-        if is_array:
-            matrix_r = matrix_r[0]
-
-        return matrix_r
-
-    def matrix_add(self, matrix_a, matrix_b):
-        new_matrix = []
-        for e in range(len(matrix_a)):
-            new_matrix.append(matrix_a[e] + matrix_b[e])
-        return new_matrix
 
     def insert(self, key):
         #TODO
@@ -180,27 +185,24 @@ class Network():
         self.network_biases.append(new_biases)
 
         if layer_type == 'input':
-            ghost_layer = Layer(2, None, None, None)
+            ghost_layer = Layer(len(self.sys_inputs), None, None, None)
             ghost_layer.outputs = self.sys_inputs
             self.layers.append(Layer(num_neurons, ghost_layer, new_weights, new_biases))
         else:
             self.layers.append(Layer(num_neurons, self.layers[-1], new_weights, new_biases))
 
         self.layers[-1].setLayerOuts()
-        # self.layers[-1].setLayerOutputs()
 
     def cumulative_partial(self, layer_num, w=None, b=None):        
         layer = self.layers[layer_num]
 
         if(w != None):
-        # dNet_dWeight
-            if layer_num == 0:
-                dInit = self.sys_inputs[int((w % self.size(layer.layer_weights)) / layer.num_neurons)]
-            else:
-                dInit = layer.prev_layer.outputs[int((w % self.size(layer.layer_weights)) / layer.num_neurons)]
+            # dNet_dWeight
+            dInit = layer.prev_layer.outputs[int((w % self.size(layer.layer_weights)) / layer.num_neurons)]
             
             #dOut_dWeight
-            out = layer.outputs[int(((w + 1) % self.size(layer.layer_weights)) / layer.num_neurons)]
+            z = w % layer.num_neurons 
+            out = layer.outputs[z]
             dInit *= out * (1 - out)
         else:
             dInit = layer.biases[b]
@@ -208,8 +210,8 @@ class Network():
 
         path = []
         
-        if(layer != self.layers[-1]): 
-            n = int((w / self.layers[layer_num].num_neurons) if (w is not None) else b)
+        if(layer != self.layers[-1]):
+            n = int((w / self.layers[layer_num].prev_layer.num_neurons) if (w is not None) else b)
             path.append(self.layers[layer_num + 1].layer_weights[n])
 
         for l in range(layer_num + 1, len(self.layers)):
@@ -218,7 +220,7 @@ class Network():
 
             for o, out in enumerate(current_layer.outputs):
                 sub_m = []
-                for j in range(current_layer.prev_layer.num_neurons):
+                for j in range(current_layer.num_neurons):
                     if j == o:
                         sub_m.append(out* (1 - out))
                     else:
@@ -250,7 +252,7 @@ class Network():
 
             running = starter
             for element in range(len(path) - 2):
-                running = self.matrix_mult(running, path[element + 1])
+                running = matrix_mult(running, path[element + 1])
             
             total = 0
             for r, run in enumerate(running):
@@ -266,7 +268,6 @@ class Network():
         for l, layer in enumerate(self.layers):
             new_layer_weights = []
 
-            #TODO: this needs to make a matrix for layer_weights
             for rw, row in enumerate(layer.layer_weights):
                 new_row = []
                 for w, weight in enumerate(row):
@@ -300,23 +301,6 @@ class Network():
         for i in range(len(self.target_output)):
             sum += (1 / len(self.target_output)) * pow((self.target_output[i] - self.layers[-1].outputs[i]), 2)
             return sum
-
-    def matrix_mult(self, matrix_a, matrix_b): #TODO: use straussen algorithm instead to make faster, make the architecture set up with matrices
-        is_array = False
-        matrix_r = [[0 for i in range(len(matrix_a))] for j in range(len(matrix_b[0]))]
-
-        if type(matrix_a[0]) != list:
-            matrix_a = [matrix_a]
-            is_array = True
-        for i in range(len(matrix_a)):
-            for j in range(len(matrix_b)):
-                for k in range(len(matrix_a[0])):
-                    matrix_r[i][j] += matrix_a[i][k] * matrix_b[k][j]
-
-        if is_array:
-            matrix_r = matrix_r[0]
-
-        return matrix_r
 
     def size(self, matrix):
         return len(matrix) * len(matrix[0])
