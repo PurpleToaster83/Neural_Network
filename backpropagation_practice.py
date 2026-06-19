@@ -208,23 +208,24 @@ class Network():
         return len(matrix) * len(matrix[0])
 
 def main():
+    # define constants for the network
     learning_rate = 1
     sys_input = [0.05, 0.10]
     target_output = [0.01, 0.99]
     error_threshold = 0.00001
 
-    # create a network and instatiate the weights, biases, and neurons
+    # create the architecture for a layered network
     network = Network(sys_input, target_output, learning_rate, error_threshold)
     network.addLayer(2, layer_type='input')
     network.addLayer(2)
     network.addLayer(len(target_output))
-    
+
+    # optimize the parameters of the network for the target
     print(f'Original Error: {network.getError()}')
     network.minimizeError()
     print(f'Updated Error: {network.getError()}')
 
     print('finished')
-
 
 if __name__ == "__main__":
     main()
