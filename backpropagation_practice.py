@@ -67,13 +67,13 @@ class Network():
         return int(number * factor) / factor
 
     def addLayer(self, num_neurons, layer_type='hidden'):
-        new_weights = []
-
         if layer_type == 'input':
             prev_layer_neurons = len(self.sys_inputs)
         else:
             prev_layer_neurons = self.layers[-1].num_neurons
 
+        # create random weight values
+        new_weights = []
         for r in range(prev_layer_neurons):
             row = []
             for w in range(num_neurons):
@@ -81,11 +81,13 @@ class Network():
             new_weights.append(row)
         self.network_weights.append(new_weights)
 
+        # create random bias values
         new_biases = []
         for b in range(num_neurons):
             new_biases.append(self.truncate(np.random.rand() * np.random.randint(10), 3)) #TODO: reimplement later, also don't use np
         self.network_biases.append(new_biases)
 
+        # make a new layer with the weights and biases
         if layer_type == 'input':
             ghost_layer = Layer(len(self.sys_inputs), None, None, None)
             ghost_layer.outputs = self.sys_inputs
@@ -95,24 +97,25 @@ class Network():
 
         self.layers[-1].setLayerOuts()
 
-    def cumulative_partial(self, layer_num, w=None, b=None):        
+    def cumulative_partial(self, layer_num, w=None, b=None):
         layer = self.layers[layer_num]
 
-        if(w != None):
+        if w is not None:
             # dNet_dWeight
             dInit = layer.prev_layer.outputs[int((w % self.size(layer.layer_weights)) / layer.num_neurons)]
-            
-            #dOut_dWeight
+
+            # dOut_dWeight
             z = w % layer.num_neurons 
             out = layer.outputs[z]
             dInit *= out * (1 - out)
         else:
+            # dOut_dBias
             dInit = layer.biases[b]
             dInit *= layer.outputs[b] * (1 - layer.outputs[b])
 
         path = []
-        
-        if(layer != self.layers[-1]):
+
+        if layer != self.layers[-1]:
             n = int((w / self.layers[layer_num].prev_layer.num_neurons) if (w is not None) else b)
             path.append(self.layers[layer_num + 1].layer_weights[n])
 
@@ -120,34 +123,37 @@ class Network():
             current_layer = self.layers[l]
             m = []
 
+            # append a diagonal matrix for dOut_dNet
             for o, out in enumerate(current_layer.outputs):
                 sub_m = []
                 for j in range(current_layer.num_neurons):
                     if j == o:
-                        sub_m.append(out* (1 - out))
+                        sub_m.append(out * (1 - out))
                     else:
                         sub_m.append(0)
                 m.append(sub_m)
             path.append(m)
 
+            # append the weight matrix for the layer
             if current_layer != self.layers[-1]:
                 path.append(self.layers[l+1].layer_weights)
             else:
                 break
-        
-        if(layer != self.layers[-1]):
+
+        #dE_dOut
+        if layer != self.layers[-1]:
             m = []
             for o, out in enumerate(self.layers[-1].outputs):
-                #∂En_∂Outn * ∂Outn_∂Netn
                 m.append([(-1 * (self.target_output[o] - out))])
             path.append(m)
         else:
             idx = (w if w is not None else b) % self.layers[-1].num_neurons
-            resid = (-1 * (self.target_output[idx] - self.layers[-1].outputs[idx]))
+            resid = -1 * (self.target_output[idx] - self.layers[-1].outputs[idx])
             path.append(self.layers[-1].outputs[idx] * (1 - self.layers[-1].outputs[idx]))
             path.append(resid)
 
-        if(layer != self.layers[-1]):
+        # multiply the matrix elements of path togeather to get a scalar
+        if layer != self.layers[-1]:
             starter = []
             for e in path[0]:
                 starter.append(e * dInit)
@@ -155,31 +161,35 @@ class Network():
             running = starter
             for element in range(len(path) - 2):
                 running = matrix_mult(running, path[element + 1])
-            
+
             total = 0
             for r, run in enumerate(running):
                 total += (run * path[-1][r][0])
         else:
             total = dInit * path[0] * path[-1]
-        
+
         return total
-    
+
     def updateAll(self):
+        # clear the new weight and bias network arrays
         new_network_weights = []
         new_network_biases = []
-        for l, layer in enumerate(self.layers):
-            new_layer_weights = []
 
+        for l, layer in enumerate(self.layers):
+
+            # calculate new weight by w' = w - a * dE_dW
+            new_layer_weights = []
             for rw, row in enumerate(layer.layer_weights):
                 new_row = []
                 for w, weight in enumerate(row):
-                    new_row.append(weight - self.learning_rate * self.cumulative_partial(l, w=((rw * layer.num_neurons) + w)))
+                    new_row.append(weight - self.learning_rate * self.cumulative_partial(l, w=(rw * layer.num_neurons) + w))
                 new_layer_weights.append(new_row)
 
+            # calculate new bias by b' = b - a * dE_dB
             new_layer_biases = []
             for b, bias in enumerate(layer.biases):
                 new_layer_biases.append(bias - self.learning_rate * self.cumulative_partial(l, b=b))
-            
+
             new_network_weights.append(new_layer_weights)
             new_network_biases.append(new_layer_biases)
 
@@ -194,7 +204,9 @@ class Network():
 
     def minimizeError(self):
         current_error = self.getError()
-        while(current_error >= self.error_threshold):
+
+        # update all parameters until the error is below the threshold
+        while current_error >= self.error_threshold:
             self.updateAll()
             current_error = self.getError()
 
