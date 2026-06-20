@@ -66,6 +66,15 @@ class Network():
         factor = pow(10, decimals)
         return int(number * factor) / factor
 
+    def size(self, matrix):
+        return len(matrix) * len(matrix[0])
+
+    def getError(self):
+        sum = 0
+        for i in range(len(self.target_output)):
+            sum += (1 / len(self.target_output)) * pow((self.target_output[i] - self.layers[-1].outputs[i]), 2)
+            return sum
+
     def addLayer(self, num_neurons, layer_type='hidden'):
         if layer_type == 'input':
             prev_layer_neurons = len(self.sys_inputs)
@@ -209,15 +218,6 @@ class Network():
         while current_error >= self.error_threshold:
             self.updateAll()
             current_error = self.getError()
-
-    def getError(self):
-        sum = 0
-        for i in range(len(self.target_output)):
-            sum += (1 / len(self.target_output)) * pow((self.target_output[i] - self.layers[-1].outputs[i]), 2)
-            return sum
-
-    def size(self, matrix):
-        return len(matrix) * len(matrix[0])
 
 def main():
     # define constants for the network
