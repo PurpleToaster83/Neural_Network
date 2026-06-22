@@ -156,6 +156,7 @@ class Network():
                 m.append([(-1 * (self.target_output[o] - out))])
             path.append(m)
         else:
+            # if parameter in last layer error dependent on one neuron
             idx = (w if w is not None else b) % self.layers[-1].num_neurons
             resid = -1 * (self.target_output[idx] - self.layers[-1].outputs[idx])
             path.append(self.layers[-1].outputs[idx] * (1 - self.layers[-1].outputs[idx]))
