@@ -45,12 +45,24 @@ class Layer():
         self.outputs = out
 
     def insert(self, key):
-        #TODO
+        #TODO: essentially just inverse of pop, right?
         pass
 
     def pop(self, n):
-        #TODO
-        pass
+        # remove pop values and store as new variables
+        out = self.outputs.pop(n)
+        b = self.biases.pop(n)
+
+        pop_weights = []
+        for row in self.layer_weights:
+            w = row.pop(n)
+            pop_weights.append(w)
+
+        # return dict of values
+        return {'w': pop_weights,'b': b, 'out': out}
+
+        
+            
 
 class Network():
     def __init__(self, sys_inputs, target_output, learning_rate, error_threshold):
@@ -61,6 +73,7 @@ class Network():
         self.network_biases = []
         self.layers = []
         self.learning_rate = learning_rate
+        self.drop_store = {}
 
     def truncate(self, number, decimals):
         factor = pow(10, decimals)
@@ -220,6 +233,12 @@ class Network():
             self.updateAll()
             current_error = self.getError()
 
+    def drop(self, l, n):
+        #TODO: make more advanced like deciding what neurons are dropped
+
+        neuron_dict = self.layers[l].pop(n)
+        self.drop_store.update({n: neuron_dict})
+
 def main():
     # define constants for the network
     learning_rate = 1
@@ -232,6 +251,10 @@ def main():
     network.addLayer(2, layer_type='input')
     network.addLayer(2)
     network.addLayer(len(target_output))
+
+    # testing if can properly update when drop neurons
+    network.drop(1, 0)
+    network.updateAll()
 
     # optimize the parameters of the network for the target
     print(f'Original Error: {network.getError()}')
