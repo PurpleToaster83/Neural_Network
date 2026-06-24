@@ -35,6 +35,7 @@ class Layer():
         self.layer_weights = layer_weights
         self.biases = biases
         self.outputs = []
+        self.drop_store = {}
 
     def setLayerOuts(self):
         net = matrix_add(matrix_mult(self.prev_layer.outputs, self.layer_weights), self.biases)
@@ -44,25 +45,56 @@ class Layer():
             out.append(o)
         self.outputs = out
 
-    def insert(self, key):
-        #TODO: essentially just inverse of pop, right?
-        pass
+    def insert(self, n, forward=False):
+        if forward:
+            # TODO: also need to reconstruct in insert
+            if len(self.layer_weights) == 1:
+                self.layer_weights = [self.layer_weights]
 
-    def pop(self, n):
-        # remove pop values and store as new variables
-        out = self.outputs.pop(n)
-        b = self.biases.pop(n)
+            self.layer_weights.insert(n, self.drop_store['n']['w'])
+            self.prev_layer.insert(n)
+        else:
+            # grab dropped values from storage
+            values = self.drop_store.pop(n)
 
-        pop_weights = []
-        for row in self.layer_weights:
-            w = row.pop(n)
-            pop_weights.append(w)
+            # put values back into matrices
+            self.outputs.insert(n, values['out'])
+            self.biases.insert(n, values['b'])
 
-        # return dict of values
-        return {'w': pop_weights,'b': b, 'out': out}
+            for r, row in enumerate(self.layer_weights):
+                row.insert(n, values['w'][r])
 
-        
-            
+    def pop(self, n, forward=False):
+        if forward:
+            self.drop_store.update({'w': self.layer_weights.pop(n)})
+
+            # TODO: this needs to be able to hand if matrix_b is a [[n1, n2, n3]] (1xn MATRIX not array)
+            # this part is not currently working
+            # take the below block out of pop and insert
+
+            # think that its making matrices wrong
+            if len(self.layer_weights) == 1 and type(self.layer_weights[0]) == list:
+                self.layer_weights = self.layer_weights[0]
+
+            self.prev_layer.pop(n)
+        else:
+            # remove pop values and store as new variables
+            out = self.outputs.pop(n)
+            b = self.biases.pop(n)
+
+            pop_weights = []
+            for row in self.layer_weights:
+                w = row.pop(n)
+                pop_weights.append(w)
+
+            # store dict of values
+            self.drop_store.update({
+                n: {
+                    'w': pop_weights,
+                    'b': b,
+                    'out': out
+                }
+            })        
 
 class Network():
     def __init__(self, sys_inputs, target_output, learning_rate, error_threshold):
@@ -73,7 +105,6 @@ class Network():
         self.network_biases = []
         self.layers = []
         self.learning_rate = learning_rate
-        self.drop_store = {}
 
     def truncate(self, number, decimals):
         factor = pow(10, decimals)
@@ -138,6 +169,7 @@ class Network():
         path = []
 
         if layer != self.layers[-1]:
+            #When this pulls the weight after drop its a scalar in brackets
             n = int((w / self.layers[layer_num].prev_layer.num_neurons) if (w is not None) else b)
             path.append(self.layers[layer_num + 1].layer_weights[n])
 
@@ -146,7 +178,7 @@ class Network():
             m = []
 
             # append a diagonal matrix for dOut_dNet
-            for o, out in enumerate(current_layer.outputs):
+            for o, out in enumerate(current_layer.outputs): #if there is only on neuron cause of drop this needs to become a scalar
                 sub_m = []
                 for j in range(current_layer.num_neurons):
                     if j == o:
@@ -235,9 +267,12 @@ class Network():
 
     def drop(self, l, n):
         #TODO: make more advanced like deciding what neurons are dropped
+        # make sure to set layer outs here
+        self.layers[l+1].pop(n, True)
+        self.updateAll()
 
-        neuron_dict = self.layers[l].pop(n)
-        self.drop_store.update({n: neuron_dict})
+        self.layers[l+1].insert(n, True)
+        self.updateAll()
 
 def main():
     # define constants for the network
@@ -254,7 +289,7 @@ def main():
 
     # testing if can properly update when drop neurons
     network.drop(1, 0)
-    network.updateAll()
+
 
     # optimize the parameters of the network for the target
     print(f'Original Error: {network.getError()}')
