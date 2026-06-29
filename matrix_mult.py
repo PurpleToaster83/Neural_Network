@@ -7,6 +7,9 @@ def matrix_mult(matrix_a, matrix_b):
         a = 1
         matrix_a = [matrix_a]
 
+    if type(matrix_b[0]) != list:
+        matrix_b = [matrix_b]
+
     matrix_r = [[0 for i in range(len(matrix_b[0]))] for j in range(a)]
 
     for i in range(len(matrix_a)):
@@ -21,16 +24,12 @@ def matrix_mult(matrix_a, matrix_b):
 
 def main():
     a = [
-        [6, 2],
-        [1, 3]
+        [3]
     ]
 
     b = [
-        [1, 2, 3],
-        [2, 4, 5]
+        1, 2
     ]
-    print(len(a))
-    print(len(b[0]))
 
     result = matrix_mult(a, b)
     for row in result:

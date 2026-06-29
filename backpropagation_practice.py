@@ -10,6 +10,9 @@ def matrix_mult(matrix_a, matrix_b): #TODO: use straussen algorithm instead to m
         a = 1
         matrix_a = [matrix_a]
 
+    if type(matrix_b[0]) != list:
+        matrix_b = [matrix_b]
+
     matrix_r = [[0 for i in range(len(matrix_b[0]))] for j in range(a)]
 
     for i in range(len(matrix_a)):
@@ -54,6 +57,8 @@ class Layer():
             self.layer_weights.insert(n, self.drop_store['n']['w'])
             self.prev_layer.insert(n)
         else:
+            self.num_neurons += 1
+
             # grab dropped values from storage
             values = self.drop_store.pop(n)
 
@@ -78,6 +83,8 @@ class Layer():
 
             self.prev_layer.pop(n)
         else:
+            self.num_neurons -= 1
+
             # remove pop values and store as new variables
             out = self.outputs.pop(n)
             b = self.biases.pop(n)
@@ -268,6 +275,9 @@ class Network():
     def drop(self, l, n):
         #TODO: make more advanced like deciding what neurons are dropped
         # make sure to set layer outs here
+
+        self.updateAll()
+
         self.layers[l+1].pop(n, True)
         self.updateAll()
 
