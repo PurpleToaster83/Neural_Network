@@ -38,7 +38,10 @@ class Layer():
         self.layer_weights = layer_weights
         self.biases = biases
         self.outputs = []
-        self.drop_store = {}
+        self.drop_store = {
+            'cur': {},
+            'for': {}
+        }
 
     def setLayerOuts(self):
         net = matrix_add(matrix_mult(self.prev_layer.outputs, self.layer_weights), self.biases)
@@ -50,17 +53,16 @@ class Layer():
 
     def insert(self, n, forward=False):
         if forward:
-            # TODO: also need to reconstruct in insert
-            if len(self.layer_weights) == 1:
-                self.layer_weights = [self.layer_weights]
+            # insert values into the forward layer
+            self.layer_weights.insert(n, self.drop_store['for'][n]['w'])
 
-            self.layer_weights.insert(n, self.drop_store['n']['w'])
+            # call insert for the back layer
             self.prev_layer.insert(n)
         else:
             self.num_neurons += 1
 
             # grab dropped values from storage
-            values = self.drop_store.pop(n)
+            values = self.drop_store['cur'].pop(n)
 
             # put values back into matrices
             self.outputs.insert(n, values['out'])
@@ -71,16 +73,15 @@ class Layer():
 
     def pop(self, n, forward=False):
         if forward:
-            self.drop_store.update({'w': self.layer_weights.pop(n)})
 
-            # TODO: this needs to be able to hand if matrix_b is a [[n1, n2, n3]] (1xn MATRIX not array)
-            # this part is not currently working
-            # take the below block out of pop and insert
+            # pop weights for the forward layer
+            self.drop_store['for'].update({
+                n : {
+                    'w': self.layer_weights.pop(n)
+                }
+            })
 
-            # think that its making matrices wrong
-            if len(self.layer_weights) == 1 and type(self.layer_weights[0]) == list:
-                self.layer_weights = self.layer_weights[0]
-
+            # pop values for the back layer
             self.prev_layer.pop(n)
         else:
             self.num_neurons -= 1
@@ -95,7 +96,7 @@ class Layer():
                 pop_weights.append(w)
 
             # store dict of values
-            self.drop_store.update({
+            self.drop_store['cur'].update({
                 n: {
                     'w': pop_weights,
                     'b': b,
@@ -176,7 +177,6 @@ class Network():
         path = []
 
         if layer != self.layers[-1]:
-            #When this pulls the weight after drop its a scalar in brackets
             n = int((w / self.layers[layer_num].prev_layer.num_neurons) if (w is not None) else b)
             path.append(self.layers[layer_num + 1].layer_weights[n])
 
@@ -185,7 +185,7 @@ class Network():
             m = []
 
             # append a diagonal matrix for dOut_dNet
-            for o, out in enumerate(current_layer.outputs): #if there is only on neuron cause of drop this needs to become a scalar
+            for o, out in enumerate(current_layer.outputs):
                 sub_m = []
                 for j in range(current_layer.num_neurons):
                     if j == o:
