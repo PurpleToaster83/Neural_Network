@@ -276,6 +276,17 @@ class Network():
         #TODO: make more advanced like deciding what neurons are dropped
         # make sure to set layer outs here
 
+        # Permanent cond
+        # - can never remove all neurons
+
+        # Begin
+        # - generate number of neurons remove based on randomness and size factors
+        # - ea. neuron equal probability remove
+        # - Number the neurons in the network (not per layer)
+        # - Randomly select
+        # - Neurons in layer and pos. Surrounding one that was removed have less likely chance to get chosen remove.
+
+
         self.updateAll()
 
         self.layers[l+1].pop(n, True)
