@@ -105,10 +105,11 @@ class Layer():
             })        
 
 class Network():
-    def __init__(self, sys_inputs, target_output, learning_rate, error_threshold):
+    def __init__(self, sys_inputs, target_output, learning_rate, drop_rate, error_threshold):
         self.sys_inputs = sys_inputs
         self.target_output = target_output
         self.error_threshold = error_threshold
+        self.drop_rate = drop_rate
         self.network_weights = []
         self.network_biases = []
         self.layers = []
@@ -272,26 +273,46 @@ class Network():
             self.updateAll()
             current_error = self.getError()
 
-    def drop(self, l, n):
-        #TODO: make more advanced like deciding what neurons are dropped
-        # make sure to set layer outs here
+    def drop(self):
+        #TODO: make sure to set layer outs somewhere
 
-        # Permanent cond
-        # - can never remove all neurons
+        #TODO: can never remove all neurons (or even all in a layer)
 
-        # Begin
-        # - generate number of neurons remove based on randomness and size factors
-        # - ea. neuron equal probability remove
-        # - Number the neurons in the network (not per layer)
-        # - Randomly select
-        # - Neurons in layer and pos. Surrounding one that was removed have less likely chance to get chosen remove.
+        #TODO: remove the possibility that output layer is removed, right
 
+        # establish rates and count neurons
+        rates = []
+        total_neurons = 0
+        for i in self.layers:
+            for _ in range(i.num_neurons):
+                rates.append(self.drop_rate)
+            total_neurons += i.num_neurons
 
-        self.updateAll()
+        num = np.random.randint(low=0, high=total_neurons) #TODO: do I want this to be random or more like a bell curve, or at least skew down somehow
+
+        # turn rate into a softmax probability distribution
+        all = sum(pow(math.e, x) for x in rates)
+        blah = []
+        for y in rates:
+            blah.append(pow(math.e, y) / all)
+
+        options = []
+        for n in range(total_neurons):
+            options.append(n)
+
+        picks = np.random.choice(options, size=num, p=blah)
+        # rates must sum to 1, so turn drop rate into softmax distribution
+
+        # TODO: how do you go from absolut neuron number to (layer, relative neuron number)
+        # does it just need to be bruit forced? (i.e. go through layers and subtract # neurons)
+
+        l = 1
+        n = 0
 
         self.layers[l+1].pop(n, True)
         self.updateAll()
 
+        # TODO: this should be moved to its own function
         self.layers[l+1].insert(n, True)
         self.updateAll()
 
@@ -301,15 +322,16 @@ def main():
     sys_input = [0.05, 0.10]
     target_output = [0.01, 0.99]
     error_threshold = 0.00001
+    drop_rate = 0.3
 
     # create the architecture for a layered network
-    network = Network(sys_input, target_output, learning_rate, error_threshold)
+    network = Network(sys_input, target_output, learning_rate, drop_rate, error_threshold)
     network.addLayer(2, layer_type='input')
     network.addLayer(2)
     network.addLayer(len(target_output))
 
     # testing if can properly update when drop neurons
-    network.drop(1, 0)
+    network.drop()
 
 
     # optimize the parameters of the network for the target
