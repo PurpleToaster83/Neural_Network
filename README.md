@@ -7,13 +7,18 @@ Backpropagation
 
 * Class System
     * Modular: can create different architectures (add layer and # neurons)
-    * Nested Classes: Netowork --> Layer --> Neuron
+    * Nested Classes: Network --> Layer --> Neuron
     * minimize use of external libraries (ideally only math)
-    * TODO: work on math for backpropogation
         1. recursive path finding for ea. weight
         2. calculate all partials
         3. multiply partials according to path for cumulative partial
         4. correct weights with cumulative partials
+
+* Dropout
+    * removed neurons/nodes to prevent overlearning
+
+* Straussen Algorithm
+    * fast O(n^log2(n)) matrix multiplication
 
 Gradient Descent
 * Basic linear regression model
