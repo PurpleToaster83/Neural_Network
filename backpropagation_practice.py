@@ -298,6 +298,7 @@ class Network():
         num = np.random.randint(low=0, high=total_neurons) #TODO: do I want this to be random or more like a bell curve, or at least skew down somehow
         picks = np.random.choice(options, size=num, p=softmax)
 
+        #TODO: didn't do the thing where its less likely to drop in and next to same layer
         #TODO: can never remove all neurons (or even all in a layer
         # remove neurons
         for pick in picks:
