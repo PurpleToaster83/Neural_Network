@@ -279,6 +279,9 @@ class Network():
         index_vals = []
         total_neurons = 0
         for i, a in enumerate(self.layers):
+            if i == len(self.layers) - 1:
+                break
+
             for j in range(a.num_neurons):
                 index_vals.append((i, j))
                 rates.append(self.drop_rate)
@@ -298,18 +301,23 @@ class Network():
         num = np.random.randint(low=0, high=total_neurons) #TODO: do I want this to be random or more like a bell curve, or at least skew down somehow
         picks = np.random.choice(options, size=num, p=softmax)
 
-        #TODO: didn't do the thing where its less likely to drop in and next to same layer
-        #TODO: can never remove all neurons (or even all in a layer
+        #TODO: can never remove all neurons (or even all in a layer)
         # remove neurons
+        affected_layers = {}
         for pick in picks:
             index_pair = index_vals[pick]
             l = index_pair[0]
+
+            # count the number of neurons removed per layer
+            if not affected_layers.get(l):
+                affected_layers.update({l: 1})
+            else:
+                affected_layers[l] += 1
+
             n = index_pair[1]
-
-            if(l > len(self.layers) - 2):
-                continue
-
             self.layers[l+1].pop(n, True)
+            #TODO: if matrix is or becomes "weird" then pop/insert not work
+            # for mult this is handled internally in mult funct but need to handle externally
 
         # update once
         self.updateAll()
@@ -319,12 +327,27 @@ class Network():
             index_pair = index_vals[pick]
             l = index_pair[0]
             n = index_pair[1]
-
-            if(l > len(self.layers) - 2):
-                continue
-
             self.layers[l+1].insert(n, True)
-        
+
+        for l in range(self.layers):
+            if affected_layers.get(l):
+                # linear - active
+                self.drop_rate[l] -= (self.drop_rate[l] / total_neurons) * affected_layers[l]
+
+                # concave up - prev
+                f = pow(math.e, -1 * (affected_layers[l] / (total_neurons * pow(self.drop_rate[l], 2))))
+                s = pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2))) * pow(affected_layers[l] / total_neurons, 0.5)
+                c = 2 * pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2))) - 1
+                self.drop_rate[l - 1] += self.drop_rate[l] * (f - s + c)
+
+                # concave down - forward
+                m = self.drop_rate[l] * pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2)))
+                f = pow(math.e, affected_layers[l] / (total_neurons * pow(self.drop_rate, 2)))
+                s = pow(-1 * affected_layers[l] / total_neurons, 0.5)
+                self.drop_rate[l + 1] -= m * (f - s + 1)
+            else:
+                self.drop_rate[l] += (self.drop_rate[l] / total_neurons)
+
         print('blah')
 
 def main():
@@ -338,6 +361,8 @@ def main():
     # create the architecture for a layered network
     network = Network(sys_input, target_output, learning_rate, drop_rate, error_threshold)
     network.addLayer(2, layer_type='input')
+    network.addLayer(4)
+    network.addLayer(3)
     network.addLayer(2)
     network.addLayer(len(target_output))
 
