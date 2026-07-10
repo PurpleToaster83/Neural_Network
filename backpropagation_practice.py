@@ -274,47 +274,57 @@ class Network():
             current_error = self.getError()
 
     def drop(self):
-        #TODO: make sure to set layer outs somewhere
-
-        #TODO: can never remove all neurons (or even all in a layer)
-
-        #TODO: remove the possibility that output layer is removed, right
-
-        # establish rates and count neurons
+        # establish rates + options and count neurons
         rates = []
+        index_vals = []
         total_neurons = 0
-        for i in self.layers:
-            for _ in range(i.num_neurons):
+        for i, a in enumerate(self.layers):
+            for j in range(a.num_neurons):
+                index_vals.append((i, j))
                 rates.append(self.drop_rate)
-            total_neurons += i.num_neurons
+            total_neurons += a.num_neurons
 
-        num = np.random.randint(low=0, high=total_neurons) #TODO: do I want this to be random or more like a bell curve, or at least skew down somehow
 
         # turn rate into a softmax probability distribution
         all = sum(pow(math.e, x) for x in rates)
-        blah = []
+        softmax = []
         for y in rates:
-            blah.append(pow(math.e, y) / all)
+            softmax.append(pow(math.e, y) / all)
 
         options = []
         for n in range(total_neurons):
             options.append(n)
 
-        picks = np.random.choice(options, size=num, p=blah)
-        # rates must sum to 1, so turn drop rate into softmax distribution
+        num = np.random.randint(low=0, high=total_neurons) #TODO: do I want this to be random or more like a bell curve, or at least skew down somehow
+        picks = np.random.choice(options, size=num, p=softmax)
 
-        # TODO: how do you go from absolut neuron number to (layer, relative neuron number)
-        # does it just need to be bruit forced? (i.e. go through layers and subtract # neurons)
+        #TODO: can never remove all neurons (or even all in a layer
+        # remove neurons
+        for pick in picks:
+            index_pair = index_vals[pick]
+            l = index_pair[0]
+            n = index_pair[1]
 
-        l = 1
-        n = 0
+            if(l > len(self.layers) - 2):
+                continue
 
-        self.layers[l+1].pop(n, True)
+            self.layers[l+1].pop(n, True)
+
+        # update once
         self.updateAll()
 
-        # TODO: this should be moved to its own function
-        self.layers[l+1].insert(n, True)
-        self.updateAll()
+        # reimplement neurons
+        for pick in picks:
+            index_pair = index_vals[pick]
+            l = index_pair[0]
+            n = index_pair[1]
+
+            if(l > len(self.layers) - 2):
+                continue
+
+            self.layers[l+1].insert(n, True)
+        
+        print('blah')
 
 def main():
     # define constants for the network
