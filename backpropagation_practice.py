@@ -54,7 +54,7 @@ class Layer():
     def insert(self, n, forward=False):
         if forward:
             # insert values into the forward layer
-            self.layer_weights.insert(n, self.drop_store['for'][n]['w'])
+            self.layer_weights.append(self.drop_store['for'][n]['w'])
 
             # call insert for the back layer
             self.prev_layer.insert(n)
@@ -65,39 +65,39 @@ class Layer():
             values = self.drop_store['cur'].pop(n)
 
             # put values back into matrices
-            self.outputs.insert(n, values['out'])
-            self.biases.insert(n, values['b'])
+            self.outputs.append(values['out'])
+            self.biases.append(values['b'])
 
             for r, row in enumerate(self.layer_weights):
-                row.insert(n, values['w'][r])
+                row.append(values['w'][r])
 
-    def pop(self, n, forward=False):
+    def pop(self, glob_n, loc_n, forward=False):
         if forward:
 
             # pop weights for the forward layer
             self.drop_store['for'].update({
-                n : {
-                    'w': self.layer_weights.pop(n)
+                glob_n : {
+                    'w': self.layer_weights.pop(loc_n)
                 }
             })
 
             # pop values for the back layer
-            self.prev_layer.pop(n)
+            self.prev_layer.pop(glob_n, loc_n)
         else:
             self.num_neurons -= 1
 
             # remove pop values and store as new variables
-            out = self.outputs.pop(n)
-            b = self.biases.pop(n)
+            out = self.outputs.pop(loc_n)
+            b = self.biases.pop(loc_n)
 
             pop_weights = []
             for row in self.layer_weights:
-                w = row.pop(n)
+                w = row.pop(loc_n)
                 pop_weights.append(w)
 
             # store dict of values
             self.drop_store['cur'].update({
-                n: {
+                glob_n: {
                     'w': pop_weights,
                     'b': b,
                     'out': out
@@ -298,56 +298,79 @@ class Network():
         for n in range(total_neurons):
             options.append(n)
 
-        num = np.random.randint(low=0, high=total_neurons) #TODO: do I want this to be random or more like a bell curve, or at least skew down somehow
-        picks = np.random.choice(options, size=num, p=softmax)
+        num = np.random.randint(low=0, high=total_neurons)
+        picks = np.random.choice(options, size=num, p=softmax, replace=False)
 
-        #TODO: can never remove all neurons (or even all in a layer)
-        # remove neurons
         affected_layers = {}
         for pick in picks:
-            index_pair = index_vals[pick]
-            l = index_pair[0]
+            pair = index_vals[pick] # this is your (l, n) tuple
+            layer_num = pair[0]
+            n = pair[1]
 
-            # count the number of neurons removed per layer
-            if not affected_layers.get(l):
-                affected_layers.update({l: 1})
+            # keep track of neurons dropped in each layer
+            if affected_layers.get(layer_num):
+                affected_layers[layer_num]['times'] += 1
+                affected_layers[layer_num]['neurons'].append(n)
             else:
-                affected_layers[l] += 1
+                affected_layers.update({
+                    layer_num: {
+                        'times': 1,
+                        'neurons': [n]
+                    }
+                })
 
-            n = index_pair[1]
-            self.layers[l+1].pop(n, True)
-            #TODO: if matrix is or becomes "weird" then pop/insert not work
-            # for mult this is handled internally in mult funct but need to handle externally
+        for l, layer in enumerate(self.layers):
 
-        # update once
+            vals = affected_layers.get(l)
+            if not vals:
+                break
+
+            # makes sure can't remove all neurons from a layer
+            if vals['times'] == layer.num_neurons:
+                r = np.random.randint(vals['times'])
+                vals['times'] -= 1
+                vals['neurons'].pop(r)
+
+            # remove neurons from layer
+            for off, glob in enumerate(vals['neurons']):
+                self.layers[l+1].pop(glob, glob-off, True)
+
         self.updateAll()
 
-        # reimplement neurons
-        for pick in picks:
-            index_pair = index_vals[pick]
-            l = index_pair[0]
-            n = index_pair[1]
-            self.layers[l+1].insert(n, True)
+        for l, layer in enumerate(self.layers):
 
-        for l in range(self.layers):
-            if affected_layers.get(l):
-                # linear - active
-                self.drop_rate[l] -= (self.drop_rate[l] / total_neurons) * affected_layers[l]
+            vals = affected_layers.get(l)
+            if not vals:
+                break
 
-                # concave up - prev
-                f = pow(math.e, -1 * (affected_layers[l] / (total_neurons * pow(self.drop_rate[l], 2))))
-                s = pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2))) * pow(affected_layers[l] / total_neurons, 0.5)
-                c = 2 * pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2))) - 1
-                self.drop_rate[l - 1] += self.drop_rate[l] * (f - s + c)
+            for n in vals['neurons']:
+                self.layers[l+1].insert(n, True)
 
-                # concave down - forward
-                m = self.drop_rate[l] * pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2)))
-                f = pow(math.e, affected_layers[l] / (total_neurons * pow(self.drop_rate, 2)))
-                s = pow(-1 * affected_layers[l] / total_neurons, 0.5)
-                self.drop_rate[l + 1] -= m * (f - s + 1)
-            else:
-                self.drop_rate[l] += (self.drop_rate[l] / total_neurons)
+        print('blah')
 
+
+        #TODO: reimplement this with similar variables
+        # update drop rates for layers that have been choosen
+        # for l in range(self.layers):
+        #     if affected_layers.get(l):
+        #         # linear - active
+        #         self.drop_rate[l] -= (self.drop_rate[l] / total_neurons) * affected_layers[l]
+
+        #         # concave up - prev
+        #         f = pow(math.e, -1 * (affected_layers[l] / (total_neurons * pow(self.drop_rate[l], 2))))
+        #         s = pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2))) * pow(affected_layers[l] / total_neurons, 0.5)
+        #         c = 2 * pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2))) - 1
+        #         self.drop_rate[l - 1] += self.drop_rate[l] * (f - s + c)
+
+        #         # concave down - forward
+        #         m = self.drop_rate[l] * pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2)))
+        #         f = pow(math.e, affected_layers[l] / (total_neurons * pow(self.drop_rate, 2)))
+        #         s = pow(-1 * affected_layers[l] / total_neurons, 0.5)
+        #         self.drop_rate[l + 1] -= m * (f - s + 1)
+        #     else:
+        #         self.drop_rate[l] += (self.drop_rate[l] / total_neurons)
+
+        #TODO: need to store the layer drop_rates for the next run
         print('blah')
 
 def main():
