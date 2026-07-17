@@ -32,11 +32,12 @@ def matrix_add(matrix_a, matrix_b):
     return new_matrix
 
 class Layer():
-    def __init__(self, num_neurons, prev_layer, layer_weights, biases):
+    def __init__(self, num_neurons, prev_layer, layer_weights, biases, drop_r=0.5):
         self.num_neurons = num_neurons
         self.prev_layer = prev_layer
         self.layer_weights = layer_weights
         self.biases = biases
+        self.drop_r = drop_r
         self.outputs = []
         self.drop_store = {
             'cur': {},
@@ -274,6 +275,11 @@ class Network():
             current_error = self.getError()
 
     def drop(self):
+        # I think drop_rate refers to how aften drop is called
+        #TODO: handle rate check internally so that drop is always called for non-continous run sequences
+
+        # also check all of this logic
+
         # establish rates + options and count neurons
         rates = []
         index_vals = []
@@ -284,7 +290,7 @@ class Network():
 
             for j in range(a.num_neurons):
                 index_vals.append((i, j))
-                rates.append(self.drop_rate)
+                rates.append(a.drop_r)
             total_neurons += a.num_neurons
 
 
@@ -323,7 +329,7 @@ class Network():
 
             vals = affected_layers.get(l)
             if not vals:
-                break
+                continue
 
             # makes sure can't remove all neurons from a layer
             if vals['times'] == layer.num_neurons:
@@ -341,36 +347,33 @@ class Network():
 
             vals = affected_layers.get(l)
             if not vals:
-                break
+                continue
 
             for n in vals['neurons']:
                 self.layers[l+1].insert(n, True)
 
         print('blah')
 
-
-        #TODO: reimplement this with similar variables
         # update drop rates for layers that have been choosen
-        # for l in range(self.layers):
-        #     if affected_layers.get(l):
-        #         # linear - active
-        #         self.drop_rate[l] -= (self.drop_rate[l] / total_neurons) * affected_layers[l]
+        for l in range(len(self.layers)):
+            if affected_layers.get(l):
+                # linear - active
+                self.layers[l].drop_r -= (self.drop_rate[l] / total_neurons) * affected_layers[l]
 
-        #         # concave up - prev
-        #         f = pow(math.e, -1 * (affected_layers[l] / (total_neurons * pow(self.drop_rate[l], 2))))
-        #         s = pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2))) * pow(affected_layers[l] / total_neurons, 0.5)
-        #         c = 2 * pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2))) - 1
-        #         self.drop_rate[l - 1] += self.drop_rate[l] * (f - s + c)
+                # concave up - prev
+                f = pow(math.e, -1 * (affected_layers[l] / (total_neurons * pow(self.drop_rate[l], 2))))
+                s = pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2))) * pow(affected_layers[l] / total_neurons, 0.5)
+                c = 2 * pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2))) - 1
+                self.layers[l - 1].drop_r += self.drop_rate[l] * (f - s + c)
 
-        #         # concave down - forward
-        #         m = self.drop_rate[l] * pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2)))
-        #         f = pow(math.e, affected_layers[l] / (total_neurons * pow(self.drop_rate, 2)))
-        #         s = pow(-1 * affected_layers[l] / total_neurons, 0.5)
-        #         self.drop_rate[l + 1] -= m * (f - s + 1)
-        #     else:
-        #         self.drop_rate[l] += (self.drop_rate[l] / total_neurons)
+                # concave down - forward
+                m = self.drop_rate[l] * pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2)))
+                f = pow(math.e, affected_layers[l] / (total_neurons * pow(self.drop_rate, 2)))
+                s = pow(-1 * affected_layers[l] / total_neurons, 0.5)
+                self.layers[l + 1].drop_r -= m * (f - s + 1)
+            else:
+                self.layers[l].drop_r += (self.drop_rate[l] / total_neurons)
 
-        #TODO: need to store the layer drop_rates for the next run
         print('blah')
 
 def main():
@@ -390,6 +393,7 @@ def main():
     network.addLayer(len(target_output))
 
     # testing if can properly update when drop neurons
+    network.drop()
     network.drop()
 
 
