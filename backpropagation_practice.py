@@ -55,7 +55,7 @@ class Layer():
     def insert(self, n, forward=False):
         if forward:
             # insert values into the forward layer
-            self.layer_weights.append(self.drop_store['for'][n]['w'])
+            self.layer_weights.append(self.drop_store['for'].pop(n)['w'])
 
             # call insert for the back layer
             self.prev_layer.insert(n)
@@ -70,6 +70,7 @@ class Layer():
             self.biases.append(values['b'])
 
             for r, row in enumerate(self.layer_weights):
+                #TODO: if flag, skip
                 row.append(values['w'][r])
 
     def pop(self, glob_n, loc_n, forward=False):
@@ -275,10 +276,11 @@ class Network():
             current_error = self.getError()
 
     def drop(self):
-        # I think drop_rate refers to how aften drop is called
-        #TODO: handle rate check internally so that drop is always called for non-continous run sequences
 
-        # also check all of this logic
+        # decide weither to drop or not based on rate
+        exit = np.random.choice([True, False], p=[1 - self.drop_rate, self.drop_rate])
+        if exit:
+            return
 
         # establish rates + options and count neurons
         rates = []
@@ -304,7 +306,7 @@ class Network():
         for n in range(total_neurons):
             options.append(n)
 
-        num = np.random.randint(low=0, high=total_neurons)
+        num = np.random.randint(low=0, high=total_neurons) #TODO: make this around a normal distribution and skew more downward
         picks = np.random.choice(options, size=num, p=softmax, replace=False)
 
         affected_layers = {}
@@ -343,6 +345,8 @@ class Network():
 
         self.updateAll()
 
+        #TODO: ssue with conflict between for and cur both trying to grab specific weights (only one currently have)
+
         for l, layer in enumerate(self.layers):
 
             vals = affected_layers.get(l)
@@ -355,24 +359,28 @@ class Network():
         print('blah')
 
         # update drop rates for layers that have been choosen
-        for l in range(len(self.layers)):
+        for l, layer in enumerate(self.layers):
             if affected_layers.get(l):
+                t = affected_layers[l]['times']
+
                 # linear - active
-                self.layers[l].drop_r -= (self.drop_rate[l] / total_neurons) * affected_layers[l]
+                layer.drop_r *= 1 - (t / total_neurons)
 
                 # concave up - prev
-                f = pow(math.e, -1 * (affected_layers[l] / (total_neurons * pow(self.drop_rate[l], 2))))
-                s = pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2))) * pow(affected_layers[l] / total_neurons, 0.5)
-                c = 2 * pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2))) - 1
-                self.layers[l - 1].drop_r += self.drop_rate[l] * (f - s + c)
+                pd = self.layers[l - 1].drop_r
+                exp1 = pow(math.e, -1 * (t / (total_neurons * pow(pd, 2))))
+                exp2 = pow(math.e, -1 * (1 / pow(pd, 2))) * pow(t / total_neurons, 0.5)
+                c = 2 * pow(math.e, -1 * (1 / pow(pd, 2))) - 1
+                pd *= 1 + (exp1 - exp2 + c)
 
                 # concave down - forward
-                m = self.drop_rate[l] * pow(math.e, -1 * (1 / pow(self.drop_rate[l], 2)))
-                f = pow(math.e, affected_layers[l] / (total_neurons * pow(self.drop_rate, 2)))
-                s = pow(-1 * affected_layers[l] / total_neurons, 0.5)
-                self.layers[l + 1].drop_r -= m * (f - s + 1)
+                fd = self.layers[l + 1].drop_r
+                mult = fd * pow(math.e, -1 * (1 / pow(fd, 2)))
+                exp1 = pow(math.e, t / (total_neurons * pow(fd, 2)))
+                exp2 = pow(-t / total_neurons, 0.5)
+                fd -= mult * (exp1 - exp2 + 1)
             else:
-                self.layers[l].drop_r += (self.drop_rate[l] / total_neurons)
+                layer.drop_r *= 1 + (t / total_neurons)
 
         print('blah')
 
