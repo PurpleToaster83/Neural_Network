@@ -55,7 +55,7 @@ class Layer():
     def insert(self, n, forward=False):
         if forward:
             # insert values into the forward layer
-            self.layer_weights.append(self.drop_store['for'].pop(n)['w'])
+            self.layer_weights.insert(n, self.drop_store['for'][n]['w'])
 
             # call insert for the back layer
             self.prev_layer.insert(n)
@@ -66,12 +66,11 @@ class Layer():
             values = self.drop_store['cur'].pop(n)
 
             # put values back into matrices
-            self.outputs.append(values['out'])
-            self.biases.append(values['b'])
+            self.outputs.insert(n, values['out'])
+            self.biases.insert(n, values['b'])
 
             for r, row in enumerate(self.layer_weights):
-                #TODO: if flag, skip
-                row.append(values['w'][r])
+                row.insert(n, values['w'][r])
 
     def pop(self, glob_n, loc_n, forward=False):
         if forward:
@@ -345,15 +344,16 @@ class Network():
 
         self.updateAll()
 
-        #TODO: ssue with conflict between for and cur both trying to grab specific weights (only one currently have)
-
+        #TODO: issue with conflict between for and cur both trying to grab specific weights (only one currently have)
+        # found pos. solution (check)
         for l, layer in enumerate(self.layers):
 
             vals = affected_layers.get(l)
             if not vals:
                 continue
 
-            for n in vals['neurons']:
+            
+            for n in vals['neurons'].reverse():
                 self.layers[l+1].insert(n, True)
 
         print('blah')
