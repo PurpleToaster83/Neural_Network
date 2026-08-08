@@ -274,7 +274,7 @@ class Network():
             self.updateAll()
             current_error = self.getError()
 
-    def drop(self):
+    def drop(self): #TODO: test and logic check drop
 
         # decide weither to drop or not based on rate
         exit = np.random.choice([True, False], p=[1 - self.drop_rate, self.drop_rate])
@@ -344,19 +344,15 @@ class Network():
 
         self.updateAll()
 
-        #TODO: issue with conflict between for and cur both trying to grab specific weights (only one currently have)
-        # found pos. solution (check)
-        for l, layer in enumerate(self.layers):
+        for l in range(len(self.layers) - 1, 0, -1):
+            layer = self.layers[l] 
 
             vals = affected_layers.get(l)
             if not vals:
                 continue
 
-            
-            for n in vals['neurons'].reverse():
+            for n in vals['neurons']:
                 self.layers[l+1].insert(n, True)
-
-        print('blah')
 
         # update drop rates for layers that have been choosen
         for l, layer in enumerate(self.layers):
@@ -380,9 +376,7 @@ class Network():
                 exp2 = pow(-t / total_neurons, 0.5)
                 fd -= mult * (exp1 - exp2 + 1)
             else:
-                layer.drop_r *= 1 + (t / total_neurons)
-
-        print('blah')
+                layer.drop_r *= 1 + (num / total_neurons)
 
 def main():
     # define constants for the network
