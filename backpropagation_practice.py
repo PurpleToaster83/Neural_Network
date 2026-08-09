@@ -305,7 +305,27 @@ class Network():
         for n in range(total_neurons):
             options.append(n)
 
-        num = np.random.randint(low=0, high=total_neurons) #TODO: make this around a normal distribution and skew more downward
+        # calculate standard deviation of distribution
+        diff = 0
+        for l in self.layers:
+            diff += pow(l.num_neurons - (total_neurons / 2), 2)
+        std = 2 * pow(diff / (total_neurons - 1), 0.5)
+
+        # calculate general probability of a right skew model
+        probs = []
+        static_sum = 0
+        for x in range(total_neurons):
+            const = (1 / (std * pow(2 * math.pi, 0.5)))
+            exp = pow(math.e, -1 * pow(((4 * x - n) / (4 * std * pow(2, 0.5))), 2))
+            erf = (1 + math.erf(5 * (8 * x) / (8 * std * pow(2, 0.5))))
+            static_sum += pow(math.e, const * exp * erf)
+            probs.append(const * exp * erf)
+
+        # softmax the distribution
+        for i in range(len(probs)):
+            probs[i] = pow(math.e, probs[i]) / static_sum
+
+        num = np.random.choice(options, p=probs)
         picks = np.random.choice(options, size=num, p=softmax, replace=False)
 
         affected_layers = {}
