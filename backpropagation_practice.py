@@ -1,4 +1,5 @@
 import math
+import random
 import numpy as np
 
 def matrix_mult(matrix_a, matrix_b): #TODO: use straussen algorithm instead to make faster
@@ -140,14 +141,14 @@ class Network():
         for r in range(prev_layer_neurons):
             row = []
             for w in range(num_neurons):
-                row.append(self.truncate((np.random.rand() + 0.01) * (np.random.randint(5) + 0.01), 3)) #TODO: reimplement later, also don't use np
+                row.append(self.truncate((random.random() + 0.01) * (random.randint(0, 10) + 0.01), 3))
             new_weights.append(row)
         self.network_weights.append(new_weights)
 
         # create random bias values
         new_biases = []
         for b in range(num_neurons):
-            new_biases.append(self.truncate(np.random.rand() * np.random.randint(10), 3)) #TODO: reimplement later, also don't use np
+            new_biases.append(self.truncate((random.random() + 0.01) * (random.randint(0, 10) + 0.01), 3))
         self.network_biases.append(new_biases)
 
         # make a new layer with the weights and biases
@@ -274,10 +275,10 @@ class Network():
             self.updateAll()
             current_error = self.getError()
 
-    def drop(self): #TODO: test and logic check drop
+    def drop(self):
 
         # decide weither to drop or not based on rate
-        exit = np.random.choice([True, False], p=[1 - self.drop_rate, self.drop_rate])
+        exit = random.choices([True, False], weights=[1 - self.drop_rate, self.drop_rate])[0]
         if exit:
             return
 
@@ -325,8 +326,8 @@ class Network():
         for i in range(len(probs)):
             probs[i] = pow(math.e, probs[i]) / static_sum
 
-        num = np.random.choice(options, p=probs)
-        picks = np.random.choice(options, size=num, p=softmax, replace=False)
+        num = random.choices(options, weights=probs)[0]
+        picks = list(set(random.choices(options, k=num, weights=softmax)))
 
         affected_layers = {}
         for pick in picks:
@@ -354,7 +355,7 @@ class Network():
 
             # makes sure can't remove all neurons from a layer
             if vals['times'] == layer.num_neurons:
-                r = np.random.randint(vals['times'])
+                r = random.randint(0, vals['times'])
                 vals['times'] -= 1
                 vals['neurons'].pop(r)
 
