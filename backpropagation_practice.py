@@ -1,6 +1,5 @@
 import math
 import random
-import numpy as np
 
 def matrix_mult(matrix_a, matrix_b): #TODO: use straussen algorithm instead to make faster
     is_array = False
