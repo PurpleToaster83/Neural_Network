@@ -1,20 +1,35 @@
-def add_empty(matrix):
+import math
+
+def pad(matrix_a, matrix_b): 
+    # determine largest dimension amoung the two matrices
+    max_d = max(len(matrix_a), len(matrix_a[0]), len(matrix_b), len(matrix_b[0]))
+
+    # the side must be a power of 2
+    power = max_d.bit_length() - 1 # look for the MSB of max_d
+    if max_d % pow(2, power) != 0:
+        max_d = pow(2, power + 1)
+
+    return (square(matrix_a, max_d), square(matrix_b, max_d))
+
+def square(matrix, n): #this one acts on one matrix and makes square to 1 input parameter
 
     # determine dimensions of matrix
     r = len(matrix)
     c = len(matrix[0])
 
     # add zero padding if not even number rows or columns
-    if r % 2 != 0:
-        new_r = ([0] * c)
-        matrix.append(new_r)
-    if c % 2 != 0:
-        for row in matrix:
-            row.append(0)
+    if r != n:
+        new_r = ([0] * (c - 1))
+        for _ in range(n - r):
+            matrix.append(new_r)
+    if c != n:
+        for _ in range(n - c):
+            for row in matrix:
+                row.append(0)
 
     return matrix
 
-def block(matrix):
+def block(matrix): 
 
     # determine dimensions of matrix
     r = len(matrix)
@@ -45,25 +60,21 @@ def block(matrix):
             c.append(one_par)
             d.append(two_par)
 
-    return [[a, b], [c, d]]  #TODO: needs to make into square matrix not just even         
+    return [[a, b], [c, d]]
 
 def main():
     a = [
-        [1, 2, 3, 4],
-        [5, 6, 7, 8],
-        [9, 10, 11, 12],
-        [13, 14, 15, 16]
+        [1, 2, 3],
+        [4, 5, 6]
     ]
 
     b = [
-        [16, 15, 14, 13],
-        [12, 11, 10, 9],
-        [8, 7, 6, 5],
-        [4, 3, 2, 1]
+        [1, 2, 3],
+        [4, 5, 6]
     ]
 
-    a = block(add_empty(a))
-    b = block(add_empty(b))
+    #TODO: need a way to handle row vector "matrices"
+    a, b = pad(a, b)
 
     print('blah')
 
