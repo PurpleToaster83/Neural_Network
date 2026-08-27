@@ -11,13 +11,13 @@ def pad(matrix_a, matrix_b):
 
     return (square(matrix_a, max_d), square(matrix_b, max_d))
 
-def square(matrix, n): #this one acts on one matrix and makes square to 1 input parameter
+def square(matrix, n):
 
     # determine dimensions of matrix
     r = len(matrix)
     c = len(matrix[0])
 
-    # add zero padding if not even number rows or columns
+    # add zero padding if not 2 power to rows or columns
     if r != n:
         new_r = ([0] * (c - 1))
         for _ in range(n - r):
@@ -33,27 +33,27 @@ def block(matrix):
 
     # determine dimensions of matrix
     r = len(matrix)
-    c = len(matrix[0])
+    col = len(matrix[0])
 
     a = []
     b = []
     c = []
     d = []
 
-    for ro, row in enumerate(matrix):
+    for ro, row in enumerate(matrix): #TODO: fix this logic
 
         one_par = []
         two_par = []
 
         # segregate between left and right
         for co, el in enumerate(row):
-            if (co <= c / 2):
+            if (co <= (col / 2) - 1):
                 one_par.append(el)
             else:
                 two_par.append(el)
 
         # segregate left and right based on up or down
-        if (ro <= r / 2):
+        if (ro <= (r / 2) - 1):
             a.append(one_par)
             b.append(two_par)
         else:
@@ -75,6 +75,9 @@ def main():
 
     #TODO: need a way to handle row vector "matrices"
     a, b = pad(a, b)
+    a = block(a)
+    b = block(b)
+    #TODO: make prep function that pads and blocks
 
     print('blah')
 
