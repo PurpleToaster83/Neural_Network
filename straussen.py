@@ -62,6 +62,75 @@ def block(matrix):
 
     return [[a, b], [c, d]]
 
+def matrix_add(matrix_a, matrix_b):
+    new_matrix = []
+    for e in range(len(matrix_a)):
+        new_matrix.append(matrix_a[e] + matrix_b[e])
+    return new_matrix
+
+def matrix_scalar_mult(matrix, s):
+    copy = matrix
+
+    for i in range(len(matrix)):
+        for j in range(len(matrix[0])):
+            copy[i][j] *= s
+
+    return copy
+
+def sm_mult(matrix_a, matrix_b):
+
+    # prep the matrices
+    a, b = pad(matrix_a, matrix_b)
+    matrix_a = block(a)
+    matrix_b = block(b) #TODO: need to fix this prep stuff to hand the scalar vs block matrix question
+
+    # a_auxP = [
+    #     matrix_add(matrix_a[0][0], matrix_a[1][1]),
+    #     matrix_add(matrix_a[1][0], matrix_a[1][1]),
+    #     matrix_a[0][0],
+    #     matrix_a[1][1],
+    #     matrix_add(matrix_a[0][0], matrix_a[0][1]),
+    #     matrix_add(matrix_a[1][0], matrix_scalar_mult(matrix_a[0][0], -1)),
+    #     matrix_add(matrix_a[0][1], matrix_scalar_mult(matrix_a[1][1], -1))
+    # ]
+
+    # b_auxP = [
+    #     matrix_add(matrix_b[0][0], matrix_b[1][1]),
+    #     matrix_b[0][0],
+    #     matrix_add(matrix_b[0][1], matrix_scalar_mult(matrix_b[1][1], -1)),
+    #     matrix_add(matrix_b[1][0], matrix_scalar_mult(matrix_b[0][0], -1)),
+    #     matrix_b[1][1],
+    #     matrix_add(matrix_b[0][0], matrix_b[0][1]),
+    #     matrix_add(matrix_b[1][0], matrix_b[1][1])
+    # ]
+
+    a_inst = [
+        [(0,0), (1,1)],
+        [(1,0), (1,1)],
+        [(0,0)],
+        [(1,1)],
+        [(0,0), (0,1)],
+        [(1,0), (0,0)], #negative
+        [(0,1), (1,1)]  #negative
+    ]
+
+    b_inst = [
+        [(0,0), (1,1)],
+        [(0,0)],
+        [(0,1), (1,1)], #negative
+        [(1,0), (0,0)], #negative
+        [(1,1)],
+        [(0,0), (0,1)],
+        [(1,0), (1,1)]
+    ]
+
+    aux_prod = []
+
+    scalar = type(matrix_a[0][0]) == int
+    
+    for m in range(8):
+        pass
+
 def main():
     a = [
         [1, 2, 3],
@@ -73,11 +142,16 @@ def main():
         [4, 5, 6]
     ]
 
+    d = [
+        [1, 2],
+        [3, 4]
+    ]
+
     #TODO: need a way to handle row vector "matrices"
-    a, b = pad(a, b)
-    a = block(a)
-    b = block(b)
-    #TODO: make prep function that pads and blocks
+    # essentially need a way to handle clean edge cases
+    c = sm_mult(a, b)
+
+    # need to check type before multiply or add to see if need to do recursion
 
     print('blah')
 
