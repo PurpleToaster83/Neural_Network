@@ -40,7 +40,7 @@ def block(matrix):
     c = []
     d = []
 
-    for ro, row in enumerate(matrix): #TODO: fix this logic
+    for ro, row in enumerate(matrix):
 
         one_par = []
         two_par = []
@@ -84,52 +84,77 @@ def sm_mult(matrix_a, matrix_b):
     matrix_a = block(a)
     matrix_b = block(b) #TODO: need to fix this prep stuff to hand the scalar vs block matrix question
 
-    # a_auxP = [
-    #     matrix_add(matrix_a[0][0], matrix_a[1][1]),
-    #     matrix_add(matrix_a[1][0], matrix_a[1][1]),
-    #     matrix_a[0][0],
-    #     matrix_a[1][1],
-    #     matrix_add(matrix_a[0][0], matrix_a[0][1]),
-    #     matrix_add(matrix_a[1][0], matrix_scalar_mult(matrix_a[0][0], -1)),
-    #     matrix_add(matrix_a[0][1], matrix_scalar_mult(matrix_a[1][1], -1))
-    # ]
+    scalar = False
 
-    # b_auxP = [
-    #     matrix_add(matrix_b[0][0], matrix_b[1][1]),
-    #     matrix_b[0][0],
-    #     matrix_add(matrix_b[0][1], matrix_scalar_mult(matrix_b[1][1], -1)),
-    #     matrix_add(matrix_b[1][0], matrix_scalar_mult(matrix_b[0][0], -1)),
-    #     matrix_b[1][1],
-    #     matrix_add(matrix_b[0][0], matrix_b[0][1]),
-    #     matrix_add(matrix_b[1][0], matrix_b[1][1])
-    # ]
+    # decide if its a matrix of scalars or of block matrices
+    if len(matrix_a[0][0][0]) == 1:
+        scalar = True
 
-    a_inst = [
-        [(0,0), (1,1)],
-        [(1,0), (1,1)],
-        [(0,0)],
-        [(1,1)],
-        [(0,0), (0,1)],
-        [(1,0), (0,0)], #negative
-        [(0,1), (1,1)]  #negative
-    ]
+        # might be a better way to do this with indexing
+        a_auxP = [
+            (matrix_a[0][0][0][0] + matrix_a[1][1][0][0]),
+            (matrix_a[1][0][0][0] + matrix_a[1][1][0][0]),
+            matrix_a[0][0][0][0],
+            matrix_a[1][1][0][0],
+            (matrix_a[0][0][0][0] + matrix_a[0][1][0][0]),
+            (matrix_a[1][0][0][0] - matrix_a[0][0][0][0]),
+            (matrix_a[0][1][0][0] - matrix_a[1][1][0][0])
+        ]
 
-    b_inst = [
-        [(0,0), (1,1)],
-        [(0,0)],
-        [(0,1), (1,1)], #negative
-        [(1,0), (0,0)], #negative
-        [(1,1)],
-        [(0,0), (0,1)],
-        [(1,0), (1,1)]
-    ]
+        b_auxP = [
+            (matrix_b[0][0][0][0] + matrix_b[1][1][0][0]),
+            matrix_b[0][0][0][0],
+            (matrix_b[0][1][0][0] - matrix_b[1][1][0][0]),
+            (matrix_b[1][0][0][0] - matrix_b[0][0][0][0]),
+            matrix_b[1][1][0][0],
+            (matrix_b[0][0][0][0] + matrix_b[0][1][0][0]),
+            (matrix_b[1][0][0][0] + matrix_b[1][1][0][0])
+        ]
+    else: 
+        a_auxP = [
+            matrix_add(matrix_a[0][0], matrix_a[1][1]),
+            matrix_add(matrix_a[1][0], matrix_a[1][1]),
+            matrix_a[0][0],
+            matrix_a[1][1],
+            matrix_add(matrix_a[0][0], matrix_a[0][1]),
+            matrix_add(matrix_a[1][0], matrix_scalar_mult(matrix_a[0][0], -1)),
+            matrix_add(matrix_a[0][1], matrix_scalar_mult(matrix_a[1][1], -1))
+        ]
+
+        b_auxP = [
+            matrix_add(matrix_b[0][0], matrix_b[1][1]),
+            matrix_b[0][0],
+            matrix_add(matrix_b[0][1], matrix_scalar_mult(matrix_b[1][1], -1)),
+            matrix_add(matrix_b[1][0], matrix_scalar_mult(matrix_b[0][0], -1)),
+            matrix_b[1][1],
+            matrix_add(matrix_b[0][0], matrix_b[0][1]),
+            matrix_add(matrix_b[1][0], matrix_b[1][1])
+        ]
 
     aux_prod = []
 
-    scalar = type(matrix_a[0][0]) == int
-    
+    # apply hadamard product operation
     for m in range(8):
-        pass
+        if scalar:
+            aux_prod.append(a_auxP[m] * b_auxP[m])
+        else:
+            aux_prod.append(sm_mult(a_auxP[m], b_auxP[m]))
+
+    # combine the auxilary products to form result matrix entries
+    if scalar:
+        result = [
+            [(aux_prod[0] + aux_prod[1]), (aux_prod[4] - aux_prod[6])],
+            [(aux_prod[2] + aux_prod[5]), (aux_prod[4] + aux_prod[5] - aux_prod[1] - aux_prod[3])]
+        ]
+    else:
+        result = [
+            [matrix_add(aux_prod[0], aux_prod[1]), matrix_add(aux_prod[4], matrix_scalar_mult(aux_prod[6], -1))],
+            [matrix_add(aux_prod[2], aux_prod[5]), matrix_add(matrix_add(aux_prod[4] + aux_prod[5]), matrix_scalar_mult(matrix_add(aux_prod[1], aux_prod[3]), -1))]
+        ]
+
+    return result
+    #TODO: crashes (likely unbounded recursion)
+    # means that scalar checks not working
 
 def main():
     a = [
@@ -142,16 +167,10 @@ def main():
         [4, 5, 6]
     ]
 
-    d = [
-        [1, 2],
-        [3, 4]
-    ]
-
     #TODO: need a way to handle row vector "matrices"
     # essentially need a way to handle clean edge cases
+    # also should check if dimensions can be mult. (this won't throw the same flag as other because padding)
     c = sm_mult(a, b)
-
-    # need to check type before multiply or add to see if need to do recursion
 
     print('blah')
 
