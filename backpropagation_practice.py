@@ -26,9 +26,22 @@ def matrix_mult(matrix_a, matrix_b): #TODO: use straussen algorithm instead to m
     return matrix_r
 
 def matrix_add(matrix_a, matrix_b):
+    row_vec = False
+    if(type(matrix_a[0]) == float or type(matrix_a[0]) == int):
+        fixed_a = [matrix_a]
+        row_vec = True
+    else:
+        fixed_a = matrix_a
+
     new_matrix = []
-    for e in range(len(matrix_a)):
-        new_matrix.append(matrix_a[e] + matrix_b[e])
+    for i in range(len(fixed_a)):
+        row = []
+        for j in range(len(fixed_a[0])):
+            row.append(fixed_a[i][j] + fixed_a[i][j])
+        new_matrix.append(row)
+
+    if row_vec:
+        return new_matrix[0]
     return new_matrix
 
 class Layer():

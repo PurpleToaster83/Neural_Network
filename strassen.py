@@ -63,23 +63,42 @@ def block(matrix):
     return [[a, b], [c, d]]
 
 def matrix_add(matrix_a, matrix_b):
+    row_vec = False
+    if(type(matrix_a[0]) == float or type(matrix_a[0]) == int):
+        fixed_a = [matrix_a]
+        row_vec = True
+    else:
+        fixed_a = matrix_a
+
     new_matrix = []
-    for i in range(len(matrix_a)):
+    for i in range(len(fixed_a)):
         row = []
-        for j in range(len(matrix_a[0])):
-            row.append(matrix_a[i][j] + matrix_b[i][j])
+        for j in range(len(fixed_a[0])):
+            row.append(fixed_a[i][j] + fixed_a[i][j])
         new_matrix.append(row)
+
+    if row_vec:
+        return new_matrix[0]
     return new_matrix
 
 def matrix_scalar_mult(matrix, s):
+    row_vec = False
+    if(type(matrix[0]) == float or type(matrix[0]) == int):
+        fixed = [matrix]
+        row_vec = True
+    else:
+        fixed = matrix
+
     copy = []
 
-    for i in range(len(matrix)):
+    for i in range(len(fixed)):
         row = []
-        for j in range(len(matrix[0])):
-            row.append(s * matrix[i][j])
+        for j in range(len(fixed[0])):
+            row.append(s * fixed[i][j])
         copy.append(row)
 
+    if row_vec:
+        return copy[0]
     return copy
 
 def sm_mult(matrix_a, matrix_b):
