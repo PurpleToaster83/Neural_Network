@@ -69,13 +69,16 @@ def matrix_add(matrix_a, matrix_b):
     return new_matrix
 
 def matrix_scalar_mult(matrix, s):
-    copy = matrix
+    copy = [] # look at shallow copy vs deep copy
+    #TODO: the actual matrix is being changed becasue pass by reference need to make a copy instead
 
     for i in range(len(matrix)):
+        row = []
         for j in range(len(matrix[0])):
-            copy[i][j] *= s
+            row.append(s * matrix[i][j])
+        copy.append(row)
 
-    return copy
+    return copy #TODO: copy points toward matrix so when change change matrix too (scalars permeating to original)
 
 def sm_mult(matrix_a, matrix_b):
 
@@ -112,7 +115,7 @@ def sm_mult(matrix_a, matrix_b):
         ]
     else: 
         a_auxP = [
-            matrix_add(matrix_a[0][0], matrix_a[1][1]),
+            matrix_add(matrix_a[0][0], matrix_a[1][1]), # I don't think matrix add is working
             matrix_add(matrix_a[1][0], matrix_a[1][1]),
             matrix_a[0][0],
             matrix_a[1][1],
@@ -166,6 +169,12 @@ def main():
         [1, 2, 3],
         [4, 5, 6]
     ]
+
+    d = matrix_scalar_mult(a, -1)
+
+    print(a)
+    print(d)
+    print(a == matrix_scalar_mult(d, -1))
 
     #TODO: need a way to handle row vector "matrices"
     # essentially need a way to handle clean edge cases
