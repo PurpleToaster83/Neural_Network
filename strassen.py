@@ -19,13 +19,11 @@ def square(matrix, n):
 
     # add zero padding if not 2 power to rows or columns
     if r != n:
-        new_r = ([0] * (c - 1))
         for _ in range(n - r):
-            matrix.append(new_r)
+            matrix.append([0] * c)
     if c != n:
-        for _ in range(n - c):
-            for row in matrix:
-                row.append(0)
+        for row in matrix:
+            row.append(0)
 
     return matrix
 
@@ -106,7 +104,7 @@ def sm_mult(matrix_a, matrix_b):
     # prep the matrices
     a, b = pad(matrix_a, matrix_b)
     matrix_a = block(a)
-    matrix_b = block(b) #TODO: need to fix this prep stuff to hand the scalar vs block matrix question
+    matrix_b = block(b)
 
     scalar = False
 
@@ -136,7 +134,7 @@ def sm_mult(matrix_a, matrix_b):
         ]
     else: 
         a_auxP = [
-            matrix_add(matrix_a[0][0], matrix_a[1][1]), # I don't think matrix add is working
+            matrix_add(matrix_a[0][0], matrix_a[1][1]),
             matrix_add(matrix_a[1][0], matrix_a[1][1]),
             matrix_a[0][0],
             matrix_a[1][1],
@@ -158,7 +156,7 @@ def sm_mult(matrix_a, matrix_b):
     aux_prod = []
 
     # apply hadamard product operation
-    for m in range(8):
+    for m in range(7):
         if scalar:
             aux_prod.append(a_auxP[m] * b_auxP[m])
         else:
@@ -175,12 +173,10 @@ def sm_mult(matrix_a, matrix_b):
     else:
         result = [
             [matrix_add(aux_prod[0], aux_prod[1]), matrix_add(aux_prod[4], matrix_scalar_mult(aux_prod[6], -1))],
-            [matrix_add(aux_prod[2], aux_prod[5]), matrix_add(matrix_add(aux_prod[4] + aux_prod[5]), matrix_scalar_mult(matrix_add(aux_prod[1], aux_prod[3]), -1))]
+            [matrix_add(aux_prod[2], aux_prod[5]), matrix_add(matrix_add(aux_prod[4], aux_prod[5]), matrix_scalar_mult(matrix_add(aux_prod[1], aux_prod[3]), -1))]
         ]
 
     return result
-    #TODO: crashes (likely unbounded recursion)
-    # means that scalar checks not working
 
 def main():
     a = [
@@ -190,7 +186,8 @@ def main():
 
     b = [
         [1, 2, 3],
-        [4, 5, 6]
+        [4, 5, 6],
+        [7, 8, 9]
     ]
 
     #TODO: need a way to handle row vector "matrices"
