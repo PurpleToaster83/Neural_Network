@@ -64,13 +64,15 @@ def block(matrix):
 
 def matrix_add(matrix_a, matrix_b):
     new_matrix = []
-    for e in range(len(matrix_a)):
-        new_matrix.append(matrix_a[e] + matrix_b[e])
+    for i in range(len(matrix_a)):
+        row = []
+        for j in range(len(matrix_a[0])):
+            row.append(matrix_a[i][j] + matrix_b[i][j])
+        new_matrix.append(row)
     return new_matrix
 
 def matrix_scalar_mult(matrix, s):
-    copy = [] # look at shallow copy vs deep copy
-    #TODO: the actual matrix is being changed becasue pass by reference need to make a copy instead
+    copy = []
 
     for i in range(len(matrix)):
         row = []
@@ -78,7 +80,7 @@ def matrix_scalar_mult(matrix, s):
             row.append(s * matrix[i][j])
         copy.append(row)
 
-    return copy #TODO: copy points toward matrix so when change change matrix too (scalars permeating to original)
+    return copy
 
 def sm_mult(matrix_a, matrix_b):
 
@@ -141,7 +143,9 @@ def sm_mult(matrix_a, matrix_b):
         if scalar:
             aux_prod.append(a_auxP[m] * b_auxP[m])
         else:
-            aux_prod.append(sm_mult(a_auxP[m], b_auxP[m]))
+            aux_prod.append(sm_mult(a_auxP[m], b_auxP[m])) #TODO: this line is where it enters infinite recursion
+            # check but, think need to "unwrap" more if not scalar
+            # matrix_a and matrix_b do not change between iterations --> cause scalar add not working ;)
 
     # combine the auxilary products to form result matrix entries
     if scalar:
@@ -169,12 +173,6 @@ def main():
         [1, 2, 3],
         [4, 5, 6]
     ]
-
-    d = matrix_scalar_mult(a, -1)
-
-    print(a)
-    print(d)
-    print(a == matrix_scalar_mult(d, -1))
 
     #TODO: need a way to handle row vector "matrices"
     # essentially need a way to handle clean edge cases
