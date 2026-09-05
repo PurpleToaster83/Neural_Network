@@ -114,8 +114,7 @@ def sm_mult(matrix_a, matrix_b):
 
         # might be a better way to do this with indexing
         a_auxP = [
-            (matrix_a[0][0][0][0] + matrix_a[1][1][0][0]),
-            (matrix_a[1][0][0][0] + matrix_a[1][1][0][0]),
+            (matrix_a[0][0][0][0] + matrix_a[1][1][0][0]), #TODO: check indeces
             matrix_a[0][0][0][0],
             matrix_a[1][1][0][0],
             (matrix_a[0][0][0][0] + matrix_a[0][1][0][0]),
@@ -176,25 +175,37 @@ def sm_mult(matrix_a, matrix_b):
             [matrix_add(aux_prod[2], aux_prod[5]), matrix_add(matrix_add(aux_prod[4], aux_prod[5]), matrix_scalar_mult(matrix_add(aux_prod[1], aux_prod[3]), -1))]
         ]
 
+    #TOOD: something is wrong with the multiplication
+    #TODO: need to remove zero elements - basically just reverse of padding
     return result
 
 def main():
+    # a = [
+    #     [1, 2, 3],
+    #     [4, 5, 6]
+    # ]
+
+    # b = [
+    #     [1, 2, 3],
+    #     [4, 5, 6],
+    #     [7, 8, 9]
+    # ]
+
     a = [
-        [1, 2, 3],
-        [4, 5, 6]
+        [1, 2],
+        [4, 5]
     ]
 
     b = [
-        [1, 2, 3],
-        [4, 5, 6],
-        [7, 8, 9]
+        [1, 2],
+        [4, 5]
     ]
 
     #TODO: need a way to handle row vector "matrices"
     # essentially need a way to handle clean edge cases
     # also should check if dimensions can be mult. (this won't throw the same flag as other because padding)
     c = sm_mult(a, b)
-
+    print(c)
     print('blah')
 
 
