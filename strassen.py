@@ -114,7 +114,7 @@ def sm_mult(matrix_a, matrix_b):
 
         # might be a better way to do this with indexing
         a_auxP = [
-            (matrix_a[0][0][0][0] + matrix_a[1][1][0][0]), #TODO: check indeces
+            (matrix_a[0][0][0][0] + matrix_a[1][1][0][0]), #TODO: check indices
             matrix_a[0][0][0][0],
             matrix_a[1][1][0][0],
             (matrix_a[0][0][0][0] + matrix_a[0][1][0][0]),
