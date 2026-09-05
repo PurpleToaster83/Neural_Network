@@ -18,7 +18,7 @@ Backpropagation
     * removed neurons/nodes to prevent overlearning
 
 * Straussen Algorithm
-    * fast O(n^log2(n)) matrix multiplication
+    * fast O(n^log2(n)) matrix multiplicatio
 
 Gradient Descent
 * Basic linear regression model
