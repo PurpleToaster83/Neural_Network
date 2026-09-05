@@ -206,7 +206,7 @@ def main():
     # also should check if dimensions can be mult. (this won't throw the same flag as other because padding)
     c = sm_mult(a, b)
     print(c)
-    print('blah')
+    print('blah blah')
 
 
 if __name__ == "__main__":
