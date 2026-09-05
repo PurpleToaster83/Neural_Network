@@ -19,6 +19,7 @@ Backpropagation
 
 * Straussen Algorithm
     * fast O(n^log2(n)) matrix multiplication
+    * also put in PDF info on tensor rank decomposition
 
 Gradient Descent
 * Basic linear regression model
