@@ -168,7 +168,7 @@ def sm_mult(matrix_a, matrix_b):
     if scalar:
         result = [
             [(aux_prod[0] + aux_prod[3] - aux_prod[4] + aux_prod[6]), (aux_prod[2] + aux_prod[4])],
-            [(aux_prod[1] + aux_prod[3]), (aux_prod[0] - aux_prod[1] + aux_prod[2] - aux_prod[5])] #TODO: element 4 is not correct
+            [(aux_prod[1] + aux_prod[3]), (aux_prod[0] - aux_prod[1] + aux_prod[2] + aux_prod[5])]
         ]
     else:
         result = [
@@ -187,43 +187,32 @@ def sm_mult(matrix_a, matrix_b):
             ],
             [
                 matrix_add(aux_prod[1], aux_prod[3]),
-                matrix_add(                                 #TODO: this is not correct
-                    matrix_add(                             #
-                        aux_prod[0],                        #
-                        matrix_scalar_mult(aux_prod[1], -1) #
-                    ),                                      #
-                    matrix_add(                             #
-                        aux_prod[2],                        #
-                        matrix_scalar_mult(aux_prod[5], -1) #
+                matrix_add(
+                    matrix_add(
+                        aux_prod[0],
+                        matrix_scalar_mult(aux_prod[1], -1)
+                    ),
+                    matrix_add(
+                        aux_prod[2],
+                        aux_prod[5]
                     )
                 )
             ]
         ]
 
-    #TOOD: something is wrong with the multiplication
     #TODO: need to remove zero elements - basically just reverse of padding
     return result
 
 def main():
-    # a = [
-    #     [1, 2, 3],
-    #     [4, 5, 6]
-    # ]
-
-    # b = [
-    #     [1, 2, 3],
-    #     [4, 5, 6],
-    #     [7, 8, 9]
-    # ]
-
     a = [
-        [1, 2],
-        [3, 4]
+        [1, 2, 3],
+        [4, 5, 6]
     ]
 
     b = [
-        [1, 2],
-        [3, 4]
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
     ]
 
     #TODO: need a way to handle row vector "matrices"
