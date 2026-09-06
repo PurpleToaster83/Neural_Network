@@ -115,6 +115,7 @@ def sm_mult(matrix_a, matrix_b):
         # might be a better way to do this with indexing
         a_auxP = [
             (matrix_a[0][0][0][0] + matrix_a[1][1][0][0]), #TODO: check indices
+            (matrix_a[1][0][0][0] + matrix_a[1][1][0][0]),
             matrix_a[0][0][0][0],
             matrix_a[1][1][0][0],
             (matrix_a[0][0][0][0] + matrix_a[0][1][0][0]),
@@ -131,7 +132,7 @@ def sm_mult(matrix_a, matrix_b):
             (matrix_b[0][0][0][0] + matrix_b[0][1][0][0]),
             (matrix_b[1][0][0][0] + matrix_b[1][1][0][0])
         ]
-    else: 
+    else:
         a_auxP = [
             matrix_add(matrix_a[0][0], matrix_a[1][1]),
             matrix_add(matrix_a[1][0], matrix_a[1][1]),
@@ -166,13 +167,37 @@ def sm_mult(matrix_a, matrix_b):
     # combine the auxilary products to form result matrix entries
     if scalar:
         result = [
-            [(aux_prod[0] + aux_prod[1]), (aux_prod[4] - aux_prod[6])],
-            [(aux_prod[2] + aux_prod[5]), (aux_prod[4] + aux_prod[5] - aux_prod[1] - aux_prod[3])]
+            [(aux_prod[0] + aux_prod[3] - aux_prod[4] + aux_prod[6]), (aux_prod[2] + aux_prod[4])],
+            [(aux_prod[1] + aux_prod[3]), (aux_prod[0] - aux_prod[1] + aux_prod[2] - aux_prod[5])] #TODO: element 4 is not correct
         ]
     else:
         result = [
-            [matrix_add(aux_prod[0], aux_prod[1]), matrix_add(aux_prod[4], matrix_scalar_mult(aux_prod[6], -1))],
-            [matrix_add(aux_prod[2], aux_prod[5]), matrix_add(matrix_add(aux_prod[4], aux_prod[5]), matrix_scalar_mult(matrix_add(aux_prod[1], aux_prod[3]), -1))]
+            [
+                matrix_add(
+                    matrix_add(
+                        aux_prod[0],
+                        aux_prod[3]
+                    ),
+                    matrix_add(
+                        matrix_scalar_mult(aux_prod[4], -1),
+                        aux_prod[6]
+                    )
+                ),
+                matrix_add(aux_prod[2], aux_prod[4])
+            ],
+            [
+                matrix_add(aux_prod[1], aux_prod[3]),
+                matrix_add(                                 #TODO: this is not correct
+                    matrix_add(                             #
+                        aux_prod[0],                        #
+                        matrix_scalar_mult(aux_prod[1], -1) #
+                    ),                                      #
+                    matrix_add(                             #
+                        aux_prod[2],                        #
+                        matrix_scalar_mult(aux_prod[5], -1) #
+                    )
+                )
+            ]
         ]
 
     #TOOD: something is wrong with the multiplication
@@ -193,12 +218,12 @@ def main():
 
     a = [
         [1, 2],
-        [4, 5]
+        [3, 4]
     ]
 
     b = [
         [1, 2],
-        [4, 5]
+        [3, 4]
     ]
 
     #TODO: need a way to handle row vector "matrices"
