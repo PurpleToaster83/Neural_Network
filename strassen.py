@@ -72,7 +72,7 @@ def matrix_add(matrix_a, matrix_b):
     for i in range(len(fixed_a)):
         row = []
         for j in range(len(fixed_a[0])):
-            row.append(fixed_a[i][j] + fixed_a[i][j])
+            row.append(fixed_a[i][j] + matrix_b[i][j])
         new_matrix.append(row)
 
     if row_vec:
@@ -101,7 +101,7 @@ def matrix_scalar_mult(matrix, s):
 
 def sm_mult(matrix_a, matrix_b):
 
-    # prep the matrices
+    # prep the matrices by turning them 
     a, b = pad(matrix_a, matrix_b)
     matrix_a = block(a)
     matrix_b = block(b)
@@ -109,12 +109,12 @@ def sm_mult(matrix_a, matrix_b):
     scalar = False
 
     # decide if its a matrix of scalars or of block matrices
-    if len(matrix_a[0][0][0]) == 1:
+    if type(matrix_a[0][0][0]) == float or type(matrix_a[0][0][0]) == int: #TODO: as go down recursion can't acess all of these indice slots
         scalar = True
 
         # might be a better way to do this with indexing
         a_auxP = [
-            (matrix_a[0][0][0][0] + matrix_a[1][1][0][0]), #TODO: check indices
+            (matrix_a[0][0][0][0] + matrix_a[1][1][0][0]),
             (matrix_a[1][0][0][0] + matrix_a[1][1][0][0]),
             matrix_a[0][0][0][0],
             matrix_a[1][1][0][0],
@@ -161,8 +161,6 @@ def sm_mult(matrix_a, matrix_b):
             aux_prod.append(a_auxP[m] * b_auxP[m])
         else:
             aux_prod.append(sm_mult(a_auxP[m], b_auxP[m])) #TODO: this line is where it enters infinite recursion
-            # check but, think need to "unwrap" more if not scalar
-            # matrix_a and matrix_b do not change between iterations --> cause scalar add not working ;)
 
     # combine the auxilary products to form result matrix entries
     if scalar:
