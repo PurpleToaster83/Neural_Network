@@ -27,7 +27,10 @@ def square(matrix, n):
 
     return matrix
 
-def block(matrix): 
+def block(matrix):
+
+    if (len(matrix) <= 2): # [[#]] --> [[[#]]]
+        return [matrix] # TODO: is this what it should return
 
     # determine dimensions of matrix
     r = len(matrix)
@@ -103,13 +106,14 @@ def sm_mult(matrix_a, matrix_b):
 
     # prep the matrices by turning them 
     a, b = pad(matrix_a, matrix_b)
-    matrix_a = block(a)
+    matrix_a = block(a) #TODO: does not properly handle [[#]]
     matrix_b = block(b)
 
     scalar = False
 
     # decide if its a matrix of scalars or of block matrices
-    if type(matrix_a[0][0][0]) == float or type(matrix_a[0][0][0]) == int: #TODO: as go down recursion can't acess all of these indice slots
+    if (type(matrix_a[0][0][0]) == float or type(matrix_a[0][0][0]) == int): #TODO: think this should check double matrix
+        # does it give the same effect
         scalar = True
 
         # might be a better way to do this with indexing
