@@ -102,17 +102,17 @@ def matrix_scalar_mult(matrix, s):
         return copy[0]
     return copy
 
-def sm_mult(matrix_a, matrix_b):
+def recur_mult(matrix_a, matrix_b):
 
     # prep the matrices by turning them 
     a, b = pad(matrix_a, matrix_b)
-    matrix_a = block(a) #TODO: does not properly handle [[#]]
+    matrix_a = block(a)
     matrix_b = block(b)
 
     scalar = False
 
     # decide if its a matrix of scalars or of block matrices
-    if (type(matrix_a[0][0]) == float or type(matrix_a[0][0]) == int): #TODO: think this should check double matrix
+    if (type(matrix_a[0][0]) == float or type(matrix_a[0][0]) == int):
         # does it give the same effect
         scalar = True
 
@@ -164,7 +164,7 @@ def sm_mult(matrix_a, matrix_b):
         if scalar:
             aux_prod.append(a_auxP[m] * b_auxP[m])
         else:
-            aux_prod.append(sm_mult(a_auxP[m], b_auxP[m])) #TODO: this line is where it enters infinite recursion
+            aux_prod.append(recur_mult(a_auxP[m], b_auxP[m]))
 
     # combine the auxilary products to form result matrix entries
     if scalar:
@@ -202,8 +202,35 @@ def sm_mult(matrix_a, matrix_b):
             ]
         ]
 
-    #TODO: need to remove zero elements - basically just reverse of padding
     return result
+
+def sm_mult(matrix_a, matrix_b):
+    r = len(matrix_a)
+    c = len(matrix_b[0])
+
+    matrix_c = recur_mult(matrix_a, matrix_b)[0] # blocked + padded result matrix
+
+    #TODO: figure out how to do this cause its weird (maybe look at block/how originally packaged it)
+    unblocked = []
+    for row in matrix_c:
+        blah = []
+        for a in range(r):
+            blah.append(row[a][0]) # can get away with just hard code 1 and 2 because all there will be in blocks
+            blah.append(row[a][1])
+        unblocked.append(blah)
+
+    trimmed_c = []
+
+    #TODO: matrix_c is not formatted like you would expect (more brackets)
+
+    # get rid of padding 0s
+    for h in range(r):
+        row = []
+        for e in range(c):
+            row.append(matrix_c[h][e])
+        trimmed_c.append(row)
+
+    return trimmed_c
 
 def main():
     a = [
