@@ -30,7 +30,7 @@ def square(matrix, n):
 def block(matrix):
 
     if (len(matrix) <= 2): # [[#]] --> [[[#]]]
-        return [matrix] # TODO: is this what it should return
+        return matrix # TODO: is this what it should return
 
     # determine dimensions of matrix
     r = len(matrix)
@@ -112,29 +112,29 @@ def sm_mult(matrix_a, matrix_b):
     scalar = False
 
     # decide if its a matrix of scalars or of block matrices
-    if (type(matrix_a[0][0][0]) == float or type(matrix_a[0][0][0]) == int): #TODO: think this should check double matrix
+    if (type(matrix_a[0][0]) == float or type(matrix_a[0][0]) == int): #TODO: think this should check double matrix
         # does it give the same effect
         scalar = True
 
         # might be a better way to do this with indexing
         a_auxP = [
-            (matrix_a[0][0][0][0] + matrix_a[1][1][0][0]),
-            (matrix_a[1][0][0][0] + matrix_a[1][1][0][0]),
-            matrix_a[0][0][0][0],
-            matrix_a[1][1][0][0],
-            (matrix_a[0][0][0][0] + matrix_a[0][1][0][0]),
-            (matrix_a[1][0][0][0] - matrix_a[0][0][0][0]),
-            (matrix_a[0][1][0][0] - matrix_a[1][1][0][0])
+            (matrix_a[0][0] + matrix_a[1][1]),
+            (matrix_a[1][0] + matrix_a[1][1]),
+            matrix_a[0][0],
+            matrix_a[1][1],
+            (matrix_a[0][0] + matrix_a[0][1]),
+            (matrix_a[1][0] - matrix_a[0][0]),
+            (matrix_a[0][1] - matrix_a[1][1])
         ]
 
         b_auxP = [
-            (matrix_b[0][0][0][0] + matrix_b[1][1][0][0]),
-            matrix_b[0][0][0][0],
-            (matrix_b[0][1][0][0] - matrix_b[1][1][0][0]),
-            (matrix_b[1][0][0][0] - matrix_b[0][0][0][0]),
-            matrix_b[1][1][0][0],
-            (matrix_b[0][0][0][0] + matrix_b[0][1][0][0]),
-            (matrix_b[1][0][0][0] + matrix_b[1][1][0][0])
+            (matrix_b[0][0] + matrix_b[1][1]),
+            matrix_b[0][0],
+            (matrix_b[0][1] - matrix_b[1][1]),
+            (matrix_b[1][0] - matrix_b[0][0]),
+            matrix_b[1][1],
+            (matrix_b[0][0] + matrix_b[0][1]),
+            (matrix_b[1][0] + matrix_b[1][1])
         ]
     else:
         a_auxP = [
