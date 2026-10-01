@@ -1,6 +1,4 @@
-import math
-
-def pad(matrix_a, matrix_b): 
+def pad(matrix_a, matrix_b):
     # determine largest dimension amoung the two matrices
     max_d = max(len(matrix_a), len(matrix_a[0]), len(matrix_b), len(matrix_b[0]))
 
@@ -23,7 +21,8 @@ def square(matrix, n):
             matrix.append([0] * c)
     if c != n:
         for row in matrix:
-            row.append(0)
+            for _ in range(n-c):
+                row.append(0)
 
     return matrix
 
@@ -208,16 +207,20 @@ def sm_mult(matrix_a, matrix_b):
     r = len(matrix_a)
     c = len(matrix_b[0])
 
-    matrix_c = recur_mult(matrix_a, matrix_b)[0] # blocked + padded result matrix
+    matrix_c = recur_mult(matrix_a, matrix_b) # blocked + padded result matrix
 
-    #TODO: figure out how to do this cause its weird (maybe look at block/how originally packaged it)
+    #TODO: block needs to have some better call (blocks within blocks)
+    #TODO: look at this with some for loops to unblock
+    #TODO: also needs to be recursive method - blocked
+    print(matrix_c[0][0][0]+matrix_c[0][1][0])
+    print(matrix_c[0][0][1]+matrix_c[0][1][1])
+
     unblocked = []
-    for row in matrix_c:
-        blah = []
-        for a in range(r):
-            blah.append(row[a][0]) # can get away with just hard code 1 and 2 because all there will be in blocks
-            blah.append(row[a][1])
-        unblocked.append(blah)
+    for block_row in matrix_c:
+        element_row = []
+        for block in block_row:
+            pass
+
 
     trimmed_c = []
 
@@ -234,8 +237,8 @@ def sm_mult(matrix_a, matrix_b):
 
 def main():
     a = [
-        [1, 2, 3],
-        [4, 5, 6]
+        [1, 2, 3, 0, 0, 0],
+        [4, 5, 6, 0, 0, 0]
     ]
 
     b = [
@@ -250,7 +253,6 @@ def main():
     c = sm_mult(a, b)
     print(c)
     print('blah blah')
-
 
 if __name__ == "__main__":
     main()
