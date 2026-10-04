@@ -28,8 +28,8 @@ def square(matrix, n):
 
 def block(matrix):
 
-    if (len(matrix) <= 2): # [[#]] --> [[[#]]]
-        return matrix # TODO: is this what it should return
+    if (len(matrix) <= 2):
+        return matrix
 
     # determine dimensions of matrix
     r = len(matrix)
@@ -60,7 +60,20 @@ def block(matrix):
             c.append(one_par)
             d.append(two_par)
 
+    if len(a) > 2:
+        return [[[block(a), block(b)], [block(c), block(d)]]]
     return [[a, b], [c, d]]
+
+def unblock(matrix):
+
+    if type(matrix[0][0][0]) == float or type(matrix[0][0][0]) == int:
+        return [matrix[0][0] + matrix[1][0], matrix[0][1] + matrix[1][1]]
+
+    unblocked = []
+    for block_row in matrix:
+        for element in unblock(block_row):
+            unblocked.append(element)
+    return unblocked
 
 def matrix_add(matrix_a, matrix_b):
     row_vec = False
@@ -105,7 +118,7 @@ def recur_mult(matrix_a, matrix_b):
 
     # prep the matrices by turning them 
     a, b = pad(matrix_a, matrix_b)
-    matrix_a = block(a)
+    matrix_a = block(a) #TODO: returns weird
     matrix_b = block(b)
 
     scalar = False
@@ -208,23 +221,9 @@ def sm_mult(matrix_a, matrix_b):
     c = len(matrix_b[0])
 
     matrix_c = recur_mult(matrix_a, matrix_b) # blocked + padded result matrix
-
-    #TODO: block needs to have some better call (blocks within blocks)
-    #TODO: look at this with some for loops to unblock
-    #TODO: also needs to be recursive method - blocked
-    print(matrix_c[0][0][0]+matrix_c[0][1][0])
-    print(matrix_c[0][0][1]+matrix_c[0][1][1])
-
-    unblocked = []
-    for block_row in matrix_c:
-        element_row = []
-        for block in block_row:
-            pass
-
+    matrix_c = unblock(matrix_c)
 
     trimmed_c = []
-
-    #TODO: matrix_c is not formatted like you would expect (more brackets)
 
     # get rid of padding 0s
     for h in range(r):
@@ -244,8 +243,22 @@ def main():
     b = [
         [1, 2, 3],
         [4, 5, 6],
-        [7, 8, 9]
+        [7, 8, 9],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0]
     ]
+
+    # a = [
+    #     [1, 2, 3],
+    #     [4, 5, 6]
+    # ]
+
+    # b = [
+    #     [1, 2, 3],
+    #     [4, 5, 6],
+    #     [7, 8, 9]
+    # ]
 
     #TODO: need a way to handle row vector "matrices"
     # essentially need a way to handle clean edge cases
@@ -253,6 +266,8 @@ def main():
     c = sm_mult(a, b)
     print(c)
     print('blah blah')
+
+    #TODO: put all this stuff into a matrix math file that can be imported
 
 if __name__ == "__main__":
     main()

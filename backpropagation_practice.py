@@ -139,8 +139,8 @@ class Network():
     def getError(self):
         sum = 0
         for i in range(len(self.target_output)):
-            sum += (1 / len(self.target_output)) * pow((self.target_output[i] - self.layers[-1].outputs[i]), 2)
-            return sum
+            sum += pow((self.target_output[i] - self.layers[-1].outputs[i]), 2)
+            return sum * (1 / len(self.target_output))
 
     def addLayer(self, num_neurons, layer_type='hidden'):
         if layer_type == 'input':
