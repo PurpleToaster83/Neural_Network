@@ -61,7 +61,7 @@ def block(matrix):
             d.append(two_par)
 
     if len(a) > 2:
-        return [[[block(a), block(b)], [block(c), block(d)]]]
+        return [[block(a), block(b)], [block(c), block(d)]]
     return [[a, b], [c, d]]
 
 def unblock(matrix):
@@ -118,8 +118,10 @@ def recur_mult(matrix_a, matrix_b):
 
     # prep the matrices by turning them 
     a, b = pad(matrix_a, matrix_b)
-    matrix_a = block(a) #TODO: returns weird
+    matrix_a = block(a) #TODO: returns weird - eventually matrix_b becomes not 2x2 composed
     matrix_b = block(b)
+
+    # possible that it is concatinating in add and not acutally adding
 
     scalar = False
 
@@ -149,7 +151,7 @@ def recur_mult(matrix_a, matrix_b):
             (matrix_b[1][0] + matrix_b[1][1])
         ]
     else:
-        a_auxP = [
+        a_auxP = [ #TODO: look at if these are still working
             matrix_add(matrix_a[0][0], matrix_a[1][1]),
             matrix_add(matrix_a[1][0], matrix_a[1][1]),
             matrix_a[0][0],
@@ -176,7 +178,9 @@ def recur_mult(matrix_a, matrix_b):
         if scalar:
             aux_prod.append(a_auxP[m] * b_auxP[m])
         else:
-            aux_prod.append(recur_mult(a_auxP[m], b_auxP[m]))
+            aux_prod.append(recur_mult(a_auxP[m], b_auxP[m])) # what iteration is this becoming non-blocked
+            # is it going into recur_mult and coming back up for the flag (scoping)?
+
 
     # combine the auxilary products to form result matrix entries
     if scalar:

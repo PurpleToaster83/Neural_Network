@@ -142,6 +142,8 @@ class Network():
             sum += pow((self.target_output[i] - self.layers[-1].outputs[i]), 2)
             return sum * (1 / len(self.target_output))
 
+        #TODO: binary cross entropy equation (MLP): -(1/N) sum^(N)_(i=1)[y_i * log(p_i) + (1-y_i)*log(1-p_i)]
+
     def addLayer(self, num_neurons, layer_type='hidden'):
         if layer_type == 'input':
             prev_layer_neurons = len(self.sys_inputs)
