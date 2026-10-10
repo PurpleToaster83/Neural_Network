@@ -76,6 +76,8 @@ def unblock(matrix):
     return unblocked
 
 def matrix_add(matrix_a, matrix_b):
+    #TODO: add doesn't know how to work when multiple levels of blocks (recurvive?)
+    
     row_vec = False
     if(type(matrix_a[0]) == float or type(matrix_a[0]) == int):
         fixed_a = [matrix_a]
@@ -117,11 +119,9 @@ def matrix_scalar_mult(matrix, s):
 def recur_mult(matrix_a, matrix_b):
 
     # prep the matrices by turning them 
-    a, b = pad(matrix_a, matrix_b)
-    matrix_a = block(a) #TODO: returns weird - eventually matrix_b becomes not 2x2 composed
-    matrix_b = block(b)
-
-    # possible that it is concatinating in add and not acutally adding
+    pad(matrix_a, matrix_b) #TODO: is acting on the object not a copy (want that?)
+    matrix_a = block(matrix_a) #TODO: returns weird - eventually matrix_b becomes not 2x2 composed - return of pad not correct?
+    matrix_b = block(matrix_b)
 
     scalar = False
 
@@ -178,8 +178,8 @@ def recur_mult(matrix_a, matrix_b):
         if scalar:
             aux_prod.append(a_auxP[m] * b_auxP[m])
         else:
-            aux_prod.append(recur_mult(a_auxP[m], b_auxP[m])) # what iteration is this becoming non-blocked
-            # is it going into recur_mult and coming back up for the flag (scoping)?
+            aux_prod.append(recur_mult(a_auxP[m], b_auxP[m])) # this is not hitting becuase pad is directyl affecting object pass in
+            #going into recur_mult and coming back up for the flag (scoping)?
 
 
     # combine the auxilary products to form result matrix entries
@@ -240,17 +240,18 @@ def sm_mult(matrix_a, matrix_b):
 
 def main():
     a = [
-        [1, 2, 3, 0, 0, 0],
-        [4, 5, 6, 0, 0, 0]
+        [1, 2, 3, 9],
+        [4, 5, 6, 9],
+        [1, 2, 3, 9],
+        [4, 5, 6, 9],
+        [1, 2, 3, 9]
     ]
 
     b = [
         [1, 2, 3],
         [4, 5, 6],
         [7, 8, 9],
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0]
+        [9, 9, 9]
     ]
 
     # a = [
