@@ -77,6 +77,11 @@ def unblock(matrix):
 
 def matrix_add(matrix_a, matrix_b):
     #TODO: add doesn't know how to work when multiple levels of blocks (recurvive?)
+    # just figure out how scalar bool should work
+    
+    scalar = False
+    if(type(matrix_a[0][0]) == float or type(matrix_a[0][0]) == int):
+        scalar = True
     
     row_vec = False
     if(type(matrix_a[0]) == float or type(matrix_a[0]) == int):
@@ -89,7 +94,10 @@ def matrix_add(matrix_a, matrix_b):
     for i in range(len(fixed_a)):
         row = []
         for j in range(len(fixed_a[0])):
-            row.append(fixed_a[i][j] + matrix_b[i][j])
+            if scalar:
+                row.append(fixed_a[i][j] + matrix_b[i][j])
+            else:
+                row.append(matrix_add(fixed_a[i][j], matrix_b[i][j]))
         new_matrix.append(row)
 
     if row_vec:
